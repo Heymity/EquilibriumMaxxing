@@ -1,0 +1,2 @@
+[submodule "https://github.com/raspberrypi/pico-sdk.git"]
+	url = ./SimpleADC_UART/pico-sdk
