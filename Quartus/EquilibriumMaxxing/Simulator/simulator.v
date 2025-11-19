@@ -15,9 +15,14 @@ module simulator #(
 	output wire																sync_sim_clock
 );
 
+	localparam	MAX_SPEED = 64'h0002_18DE_F400_0000;
+	localparam  NUM_STEPS = 16'd3200;
+
 	reg signed 			[fixedPointBaseBits+   precision-1:0]	total_acc; 				// step/16(2^precision) clk2
 	reg signed 			[fixedPointBaseBits+24+precision-1:0]	integrated_speed;		// step/16(2^precision) clk	
 	reg signed 			[fixedPointBaseBits+47+precision-1:0]	integrated_pos;		// step/16(2^precision)   
+	
+	wire signed 		[fixedPointBaseBits+24+precision-1:0]	absolute_speed;		// step/16(2^precision) clk	  
 	
 	reg [31:0] sim_clock_counter;
 	reg sim_clock;
@@ -50,6 +55,17 @@ module simulator #(
 			total_acc			=	(alavanca1 + alavanca2 + gravity);
 			
 			integrated_speed 	= integrated_speed + (total_acc * simPeriod);
+		
+			
+			if (absolute_speed > MAX_SPEED) begin
+				if (integrated_speed < 0) begin
+					integrated_speed = -MAX_SPEED;
+				end else begin
+					integrated_speed = MAX_SPEED;
+				end
+			end	
+			
+			
 			integrated_pos 	= integrated_pos + (integrated_speed * simPeriod);
 			
 			delta_steps 		= integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] - current_pos; 
@@ -58,5 +74,6 @@ module simulator #(
 		end
 	end
 	
-
+	assign absolute_speed = integrated_speed < 0 ? -integrated_speed : integrated_speed;
+	
 endmodule

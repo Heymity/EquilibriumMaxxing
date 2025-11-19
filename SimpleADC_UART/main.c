@@ -144,9 +144,9 @@ void __not_in_flash_func(dma_handler()) {
 	// Clear the interrupt request.
 
     int firstAdc = ((-((int)adc_get_selected_input() - NUM_SAMPLES_PER_BUFFER)) % ADC_CHANNELS);
-    long sum[ADC_CHANNELS];
-    for (int i = 0; i < ADC_CHANNELS; i++) {
-        sum[firstAdc + (i % ADC_CHANNELS)] += adcBuffers[lastDmaBufferIdx][i];
+    long sum[ADC_CHANNELS] = {0, 0};
+    for (int i = 0; i < NUM_SAMPLES_PER_BUFFER; i++) {
+        sum[(firstAdc + i) % ADC_CHANNELS] += adcBuffers[lastDmaBufferIdx][i];
     }
 
     for (int i = 0; i < ADC_CHANNELS; i++) {
@@ -161,19 +161,29 @@ void __not_in_flash_func(dma_handler()) {
 	//}
 	//printf("ADC FIFO has %d elements  | \n", adc_fifo_get_level());
 	//
-    printf("Avg: %ld\n", sum[0]/NUM_SAMPLES_PER_BUFFER);
-    printf("Avg: %ld\n", sum[1]/NUM_SAMPLES_PER_BUFFER);
+    printf("Avg: %ld\n", sum[0]);
+    printf("Avg: %ld\n", sum[1]);
     printf("Last: %d\n", adcBuffers[lastDmaBufferIdx][0]);
-    printf("Last: %d\n", adcBuffers[lastDmaBufferIdx][0]);
+    printf("Last: %d\n", adcBuffers[lastDmaBufferIdx][1]);
+
+	int16_t remapped[] = {0, 0};
+	for (int i = 0; i < ADC_CHANNELS; i++) {
+		remapped[i] = ((uint16_t)(sum[i] < 0 ? -sum[i] : sum[i])) - 0xFFF/2;
+	}
+
+	remapped[1] = 0;
+	printf("Remapped: %d\n", remapped[0]);
+	printf("Remapped: %d\n", remapped[1]);
+
 
 	uint64_t sample_time = lastInvokedTime- tmp;
 	uint8_t header[] = {
 		// Preamble - 4 bytes
 		'D', 'A', 'T', 'A',
-        (uint8_t)   adcBuffers[lastDmaBufferIdx][0] & 0xff,
-        (uint8_t) ((adcBuffers[lastDmaBufferIdx][0] >> 8) & 0xff) | 0xF000,
-        (uint8_t)   adcBuffers[lastDmaBufferIdx][1] & 0xff,
-        (uint8_t) ((adcBuffers[lastDmaBufferIdx][1] >> 8) & 0xff) | 0xF000,
+        (uint8_t)   remapped[0] & 0xff,
+        (uint8_t) ((remapped[0] >> 8) & 0xff) | 0xF000,
+        (uint8_t)   remapped[1] & 0xff,
+        (uint8_t) ((remapped[1] >> 8) & 0xff) | 0xF000,
 		/* Timestamp - 8 bytes (12 bytes total) - Little Endian
 		(uint8_t) lastInvokedTime & 0xff,
 		(uint8_t) ((lastInvokedTime >> 8) & 0xff),

@@ -25,11 +25,20 @@ module EQUILIBRIUM_MAXXING_FD (
 	
 	output wire [31:0] M_eff_db,
 	output wire [31:0] mid_idx_db,
-	output wire [31:0] max_idx_db
+	output wire [31:0] max_idx_db,
+	
+	output wire [27:0] db_al1,
+	output wire [27:0] db_al2,
+	
+	output wire	[6:0] db_estado_serial2alavanca,
+	output wire	[6:0] db_estado_serialreceiver,
+	
+	output wire [15:0] db_current_pos
 );
 
 	wire signed [15:0] alavanca1;
    wire signed [15:0] alavanca2;
+	
 	
 	serial2alavanca SERIAL (
 		.clock				(clock),
@@ -38,25 +47,42 @@ module EQUILIBRIUM_MAXXING_FD (
 			
 		.al1Bits				(alavanca1),
 		.al2Bits				(alavanca2),
-		.db_estado			(),
-		.db_estado_serial	()
+		.db_estado			(db_estado_serial2alavanca),
+		.db_estado_serial	(db_estado_serialreceiver)
 	);
 
 	hexa7seg HEX1 (
 		.hexa		(alavanca1[3:0]),
-	   .display	(db_al1_1)
+	   .display	(db_al1[6:0])
 	);
 	hexa7seg HEX2 (
 		.hexa		(alavanca1[7:4]),
-	   .display	(db_al1_2)
+	   .display	(db_al1[13:7])
 	);
 	hexa7seg HEX3 (
 		.hexa		(alavanca1[11:8]),
-	   .display	(db_al1_3)
+	   .display	(db_al1[20:14])
 	);
 	hexa7seg HEX4 (
 		.hexa		(alavanca1[15:12]),
-	   .display	(db_al1_4)
+	   .display	(db_al1[27:21])
+	);
+	
+	hexa7seg HEX12 (
+		.hexa		(alavanca2[3:0]),
+	   .display	(db_al2[6:0])
+	);
+	hexa7seg HEX22 (
+		.hexa		(alavanca2[7:4]),
+	   .display	(db_al2[13:7])
+	);
+	hexa7seg HEX32 (
+		.hexa		(alavanca2[11:8]),
+	   .display	(db_al2[20:14])
+	);
+	hexa7seg HEX42 (
+		.hexa		(alavanca2[15:12]),
+	   .display	(db_al2[27:21])
 	);
 
 	
@@ -74,6 +100,8 @@ module EQUILIBRIUM_MAXXING_FD (
 	
 	wire signed [15:0] current_pos;
 	wire [31:0] mid_idx, max_idx;
+	
+	assign db_current_pos = current_pos;
 	
 	pendulum_driver PEND (
 		.clock(clock),
