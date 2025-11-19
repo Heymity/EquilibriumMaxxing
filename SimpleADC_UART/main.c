@@ -136,31 +136,44 @@ void __not_in_flash_func(dma_handler()) {
 	dma_hw->ints0 = 1u << dma_chan;
 
 	dma_channel_set_write_addr(dma_chan, adcBuffers[dmaBufferIdx], true);
-	printf("ADC FIFO has %d elements  | ", adc_fifo_get_level());
+	//printf("ADC FIFO has %d elements  | ", adc_fifo_get_level());
 	const uint64_t tmp = lastInvokedTime;
 	lastInvokedTime = to_us_since_boot(get_absolute_time());
-	printf("DMA IRQ Triggered, deltaT = %llu ms (%llu us), expected to be %f mas | " , (lastInvokedTime- tmp)/1000, lastInvokedTime - tmp, NUM_SAMPLES_PER_BUFFER/(ADC_CHANNELS * (ADC_CHANNEL_SAMPLE_RATE/1000.0f)));
+	//printf("DMA IRQ Triggered, deltaT = %llu ms (%llu us), expected to be %f mas | " , (lastInvokedTime- tmp)/1000, lastInvokedTime - tmp, NUM_SAMPLES_PER_BUFFER/(ADC_CHANNELS * (ADC_CHANNEL_SAMPLE_RATE/1000.0f)));
 
 	// Clear the interrupt request.
 
+    int firstAdc = ((-((int)adc_get_selected_input() - NUM_SAMPLES_PER_BUFFER)) % ADC_CHANNELS);
+    long sum[ADC_CHANNELS];
+    for (int i = 0; i < ADC_CHANNELS; i++) {
+        sum[firstAdc + (i % ADC_CHANNELS)] += adcBuffers[lastDmaBufferIdx][i];
+    }
 
-	long sum = 0;
-	for (int i = 0; i < NUM_SAMPLES_PER_BUFFER; i++) {
-		sum += adcBuffers[lastDmaBufferIdx][i];
+    for (int i = 0; i < ADC_CHANNELS; i++) {
+        sum[i] = (sum[i] * ADC_CHANNELS) / NUM_SAMPLES_PER_BUFFER;
+       //sum[i] -= (0x0FFF / 2);
+    }
+	//long sum = 0;
+	//for (int i = 0; i < NUM_SAMPLES_PER_BUFFER; i++) {
+		//sum += adcBuffers[lastDmaBufferIdx][i];
 		//adcBuffers[lastDmaBufferIdx][i] |= 0b1111 << 12;
 //		adcBuffers[lastDmaBufferIdx][i] = __builtin_bswap16(adcBuffers[lastDmaBufferIdx][i]);
-	}
-	printf("ADC FIFO has %d elements  | ", adc_fifo_get_level());
+	//}
+	//printf("ADC FIFO has %d elements  | \n", adc_fifo_get_level());
 	//
+    printf("Avg: %ld\n", sum[0]/NUM_SAMPLES_PER_BUFFER);
+    printf("Avg: %ld\n", sum[1]/NUM_SAMPLES_PER_BUFFER);
+    printf("Last: %d\n", adcBuffers[lastDmaBufferIdx][0]);
+    printf("Last: %d\n", adcBuffers[lastDmaBufferIdx][0]);
 
 	uint64_t sample_time = lastInvokedTime- tmp;
 	uint8_t header[] = {
 		// Preamble - 4 bytes
 		'D', 'A', 'T', 'A',
-        (uint8_t)  adcBuffers[lastDmaBufferIdx][0] & 0xff,
-        (uint8_t) ((adcBuffers[lastDmaBufferIdx][0] >> 8) & 0xff),
-        (uint8_t)  adcBuffers[lastDmaBufferIdx][1] & 0xff,
-        (uint8_t) ((adcBuffers[lastDmaBufferIdx][1] >> 8) & 0xff),
+        (uint8_t)   adcBuffers[lastDmaBufferIdx][0] & 0xff,
+        (uint8_t) ((adcBuffers[lastDmaBufferIdx][0] >> 8) & 0xff) | 0xF000,
+        (uint8_t)   adcBuffers[lastDmaBufferIdx][1] & 0xff,
+        (uint8_t) ((adcBuffers[lastDmaBufferIdx][1] >> 8) & 0xff) | 0xF000,
 		/* Timestamp - 8 bytes (12 bytes total) - Little Endian
 		(uint8_t) lastInvokedTime & 0xff,
 		(uint8_t) ((lastInvokedTime >> 8) & 0xff),
@@ -193,6 +206,6 @@ void __not_in_flash_func(dma_handler()) {
 	//tud_cdc_n_write_flush(1);
 
 	//tud_cdc_n_write(0, prev_buffer, NUM_SAMPLES);
-	printf("Avg: %d\n", sum/NUM_SAMPLES_PER_BUFFER);
+
 }
 
