@@ -3,16 +3,17 @@ module simulator #(
 	parameter fixedPointBaseBits = 16,
 	parameter precision = 16
 ) (
-	input 																	clock,
-	input																		reset,
+	input 											clock,
+	input												reset,
 	input signed 		[fixedPointBaseBits+precision-1:0]	 	alavanca1,
 	input signed 		[fixedPointBaseBits+precision-1:0] 		alavanca2,
 	input signed 		[fixedPointBaseBits+precision-1:0]		gravity,
+	input wire											calib_done,
 	
-	output reg signed [fixedPointBaseBits-1:0]					delta_steps, 			// step/16
-	output reg signed [fixedPointBaseBits-1:0]					current_pos,			// step/16
+	output reg signed [fixedPointBaseBits-1:0]				delta_steps, 			// step/16
+	output reg signed [fixedPointBaseBits-1:0]				current_pos,			// step/16
 
-	output wire																sync_sim_clock
+	output wire											sync_sim_clock
 );
 
 	localparam	MAX_SPEED = 64'h0002_18DE_F400_0000;
@@ -51,6 +52,9 @@ module simulator #(
 			integrated_pos		<= {(precision + fixedPointBaseBits + 47){1'b0}};
 			current_pos		 	<= {fixedPointBaseBits{1'b0}};
 			delta_steps		 	<= {fixedPointBaseBits{1'b0}};
+		end else if (calib_done) begin
+			// Reset current_pos to 0 when calibration is complete
+			current_pos <= {fixedPointBaseBits{1'b0}};
 		end else begin
 			total_acc			=	(alavanca1 + alavanca2 + gravity);
 			

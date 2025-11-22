@@ -12,6 +12,12 @@ module WS2811_array_controller_fd (
     input  [23:0]   external_led2,
     input  [23:0]   external_led3,
     input  [23:0]   external_led4,
+    input  [23:0]   external_led5,
+    input  [23:0]   external_led6,
+    input  [23:0]   external_led7,
+    input  [23:0]   external_led8,
+    input  [23:0]   external_led9,
+    input  [23:0]   external_led10,
 
     // Control Inputs
     input           send_data,
@@ -80,6 +86,12 @@ module WS2811_array_controller_fd (
                      (curr_led == 2) ? external_led2 :
                      (curr_led == 3) ? external_led3 :
                      (curr_led == 4) ? external_led4 :
+                     (curr_led == 5) ? external_led5 :
+                     (curr_led == 6) ? external_led6 :
+                     (curr_led == 7) ? external_led7 :
+                     (curr_led == 8) ? external_led8 :
+                     (curr_led == 9) ? external_led9 :
+                     (curr_led == 10) ? external_led10 :
                      24'h000000;
 
     // escolher entre antigo e novo

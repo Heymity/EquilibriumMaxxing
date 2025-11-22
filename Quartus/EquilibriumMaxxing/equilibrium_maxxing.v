@@ -1,7 +1,9 @@
 module equilibrium_maxxing (
 	input  wire clock,
 
+	input wire start_game,
 	input	 wire	RX,
+	input  wire sensorFimCurso,
 	
 	output wire serial,
 	output wire db_serial,
@@ -10,10 +12,7 @@ module equilibrium_maxxing (
 	output wire [9:0] pontuacao,
 	output wire ganhou_ponto,
 	output wire perdeu_ponto,
-	
-	//output wire [31:0] M_eff_db,
-	//output wire [31:0] mid_idx_db,
-	//output wire [31:0] max_idx_db
+	output [2:0] nivel_dificuldade,
 	
 	input	wire [9:0] SW,
 	
@@ -28,7 +27,6 @@ module equilibrium_maxxing (
 	wire reset;
 	assign reset = SW[9];
 
-
 	wire [1:0] nivel_dificuldade;
 	wire gerar_nova_jogada;
 	wire conta_nivel;
@@ -40,7 +38,7 @@ module equilibrium_maxxing (
 	wire [27:0] db_7seg_alavanca1;
 	wire [27:0] db_7seg_alavanca2;
 	wire [6:0] db_estado_serial2alavanca;
-   wire [6:0] db_estado_serialreceiver;
+    wire [6:0] db_estado_serialreceiver;
 	wire [15:0] db_current_pos;
 	wire [27:0] db_current_pos_7seg;
 	
@@ -48,13 +46,17 @@ module equilibrium_maxxing (
 		.clock(clock),
 		.reset(reset),
 	
-		.nivel_dificuldade(nivel_dificuldade),
+		.start_game(start_game),
 		.ponto_evento(ponto_evento),
+		.prep_done(prep_done),
+		.sensorFimCurso(sensorFimCurso),
 	
 		.gerar_nova_jogada(gerar_nova_jogada),
 		.conta_nivel(conta_nivel),
 		.reset_nivel(reset_nivel),
-		.fade_trigger(fade_trigger)
+		.fade_trigger(fade_trigger),
+		.trava_servo(trava_servo),
+		.calib_start(calib_start)
 	);
 	
 	EQUILIBRIUM_MAXXING_FD FD (
@@ -63,13 +65,19 @@ module equilibrium_maxxing (
 	
 		.RX(RX),
 	
+		.start_game(start_game),
 		.gerar_nova_jogada(gerar_nova_jogada),
 	
 		.conta_nivel(conta_nivel),
 		.reset_nivel(reset_nivel),
 	
 		.fade_trigger(fade_trigger),
-	
+
+		.calib_start(calib_start),
+
+		.sensorFimCurso(sensorFimCurso),
+		.trava_servo(trava_servo),
+
 		.nivel_dificuldade(nivel_dificuldade),
 	
 		.serial(serial),
@@ -89,10 +97,6 @@ module equilibrium_maxxing (
 		.db_estado_serialreceiver	(db_estado_serialreceiver	),
 		
 		.db_current_pos(db_current_pos)
-		
-		//.M_eff_db(M_eff_db),
-		//.mid_idx_db(mid_idx_db),
-		//.max_idx_db(max_idx_db)
 	);
 	
 	assign {HEX5, HEX4, HEX3, HEX2, HEX1, HEX0} = 

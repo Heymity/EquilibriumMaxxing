@@ -3,7 +3,8 @@ module EQUILIBRIUM_MAXXING_FD (
 	input	wire reset,
 		
 	input	wire RX,
-		
+	
+	input	wire start_game,
 	input	wire gerar_nova_jogada,
 		
 	input	wire conta_nivel,
@@ -11,6 +12,11 @@ module EQUILIBRIUM_MAXXING_FD (
 		
 	input	wire fade_trigger,
 	
+	input   wire calib_start,
+    
+    input  wire sensorFimCurso,
+    input  wire trava_servo,
+
 	output wire [1:0] nivel_dificuldade,
 	
 	output wire serial,
@@ -94,7 +100,7 @@ module EQUILIBRIUM_MAXXING_FD (
 		.reset(reset),
 		.alavanca1(alavanca1),
 		.alavanca2(alavanca2),
-		.start_game(gerar_nova_jogada),
+		.start_game(start_game),
 		.nivel_reg(nivel_dificuldade_interno)
 	);
 	
@@ -103,14 +109,30 @@ module EQUILIBRIUM_MAXXING_FD (
 	
 	assign db_current_pos = current_pos;
 	
+	wire signed [15:0] al1_drive;
+	wire signed [15:0] al2_drive;
+	wire calib_done;
+
+	pendulum_input_mux INPUT_MUX (
+		.alavanca1(alavanca1),
+		.alavanca2(alavanca2),
+		.calib_start(calib_start),
+		.sensorFimCurso(sensorFimCurso),
+		.trava_servo(trava_servo),
+		.al1_drive(al1_drive),
+		.al2_drive(al2_drive),
+		.calib_done(calib_done)
+	);
+
 	pendulum_driver PEND (
 		.clock(clock),
 		.reset(reset),
-		.al1Bits(alavanca1),
-		.al2Bits(alavanca2),
+		.al1Bits(al1_drive),
+		.al2Bits(al2_drive),
 		.step(step),
 		.dir(dir),
-		.current_pos(current_pos)
+		.current_pos(current_pos),
+		.calib_done(calib_done)
 	);
 	
 	wire [2:0] led_alvo;
@@ -142,14 +164,10 @@ module EQUILIBRIUM_MAXXING_FD (
 	
 		.nivel_dificuldade(nivel_dificuldade_interno),
 	
-		.conta_nivel0(conta_nivel),
-		.conta_nivel1(conta_nivel),
-		.conta_nivel23(conta_nivel),
-	
+		.conta_nivel(conta_nivel),
+
 		.reset_ponto(reset_nivel),
-		.reset_nivel0(reset_nivel),
-		.reset_nivel1(reset_nivel),
-		.reset_nivel23(reset_nivel),
+		.reset_nivel(reset_nivel),
 	
 		.ganhou_ponto(ganhou_ponto),
 		.perdeu_ponto(perdeu_ponto),

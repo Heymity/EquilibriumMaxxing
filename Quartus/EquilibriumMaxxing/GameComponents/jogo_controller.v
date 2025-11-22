@@ -8,14 +8,10 @@ module jogo_controller (
     input  wire [1:0] nivel_dificuldade,
 
     // sinais de controle dos contadores
-    input  wire conta_nivel0,
-    input  wire conta_nivel1,
-    input  wire conta_nivel23,
+    input  wire conta_nivel,
 
     input  wire reset_ponto,
-    input  wire reset_nivel0,
-    input  wire reset_nivel1,
-    input  wire reset_nivel23,
+    input  wire reset_nivel,
 
     output wire ganhou_ponto,
     output wire perdeu_ponto,
@@ -59,8 +55,8 @@ module jogo_controller (
     ) contador_jogo_nivel_0 (
         .clock(clock),
         .zera_as(reset),
-        .zera_s(reset_nivel0),
-        .conta(conta_nivel0),
+        .zera_s(reset_nivel),
+        .conta(conta_nivel),
         .Q(contador_jogo_lvl0),
         .fim(ganhou_ponto_lvl0),
         .meio()
@@ -76,8 +72,8 @@ module jogo_controller (
     ) contador_jogo_nivel_1 (
         .clock(clock),
         .zera_as(reset),
-        .zera_s(reset_nivel1),
-        .conta(conta_nivel1),
+        .zera_s(reset_nivel),
+        .conta(conta_nivel),
         .count_up(isInPosition),
         .Q(contador_jogo_lvl1),
         .fim(ganhou_ponto_lvl1),
@@ -96,8 +92,8 @@ module jogo_controller (
     ) contador_jogo_nivel_2_3 (
         .clock(clock),
         .zera_as(reset),
-        .zera_s(reset_nivel23),
-        .conta(conta_nivel23),
+        .zera_s(reset_nivel),
+        .conta(conta_nivel),
         .score(pontuacao),
         .count_up(isInPosition),
         .Q(contador_jogo_lvl23),
