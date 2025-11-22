@@ -9,10 +9,10 @@ module equilibrium_maxxing (
 	output wire db_serial,
 	output wire step,
 	output wire dir,
-	output wire [9:0] pontuacao,
+	output wire [7:0] pontuacao,
 	output wire ganhou_ponto,
 	output wire perdeu_ponto,
-	output [2:0] nivel_dificuldade,
+	output [1:0] nivel_dificuldade,
 	
 	input	wire [9:0] SW,
 	
@@ -32,6 +32,11 @@ module equilibrium_maxxing (
 	wire conta_nivel;
 	wire reset_nivel;
 	wire fade_trigger;
+	wire prep_done;
+	wire trava_servo;
+	wire calib_start;
+	wire reset_prep_cnt;
+	wire reset_nivel_locked;
 	
 	wire ponto_evento = ganhou_ponto | perdeu_ponto;
 	
@@ -56,7 +61,9 @@ module equilibrium_maxxing (
 		.reset_nivel(reset_nivel),
 		.fade_trigger(fade_trigger),
 		.trava_servo(trava_servo),
-		.calib_start(calib_start)
+		.calib_start(calib_start),
+		.reset_prep_cnt(reset_prep_cnt),
+		.reset_nivel_locked(reset_nivel_locked)
 	);
 	
 	EQUILIBRIUM_MAXXING_FD FD (
@@ -79,6 +86,9 @@ module equilibrium_maxxing (
 		.trava_servo(trava_servo),
 
 		.nivel_dificuldade(nivel_dificuldade),
+		.prep_done(prep_done),
+		.reset_prep_cnt(reset_prep_cnt),
+		.reset_nivel_locked(reset_nivel_locked),
 	
 		.serial(serial),
 		.db_serial(db_serial),

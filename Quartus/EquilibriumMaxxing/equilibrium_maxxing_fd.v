@@ -16,8 +16,11 @@ module EQUILIBRIUM_MAXXING_FD (
     
     input  wire sensorFimCurso,
     input  wire trava_servo,
+    input  wire reset_prep_cnt,
+    input  wire reset_nivel_locked,
 
 	output wire [1:0] nivel_dificuldade,
+	output wire prep_done,
 	
 	output wire serial,
 	output wire db_serial,
@@ -27,11 +30,11 @@ module EQUILIBRIUM_MAXXING_FD (
 	
 	output wire ganhou_ponto,
 	output wire perdeu_ponto,
-	output wire [9:0] pontuacao,
+	output wire [7:0] pontuacao,
 	
-	output wire [31:0] M_eff_db,
-	output wire [31:0] mid_idx_db,
-	output wire [31:0] max_idx_db,
+	output wire [9:0] M_eff_db,
+	output wire [9:0] mid_idx_db,
+	output wire [9:0] max_idx_db,
 	
 	output wire [27:0] db_al1,
 	output wire [27:0] db_al2,
@@ -97,7 +100,7 @@ module EQUILIBRIUM_MAXXING_FD (
 	
 	level_register LEVEL_SEL (
 		.clock(clock),
-		.reset(reset),
+		.reset(reset_nivel_locked),
 		.alavanca1(alavanca1),
 		.alavanca2(alavanca2),
 		.start_game(start_game),
@@ -105,7 +108,7 @@ module EQUILIBRIUM_MAXXING_FD (
 	);
 	
 	wire signed [15:0] current_pos;
-	wire [31:0] mid_idx, max_idx;
+	wire [9:0] mid_idx, max_idx;
 	
 	assign db_current_pos = current_pos;
 	
@@ -135,7 +138,7 @@ module EQUILIBRIUM_MAXXING_FD (
 		.calib_done(calib_done)
 	);
 	
-	wire [2:0] led_alvo;
+	wire [3:0] led_alvo;
 	
 	random_led_controller RAND (
 		.clock(clock),
@@ -182,5 +185,19 @@ module EQUILIBRIUM_MAXXING_FD (
 	assign nivel_dificuldade = nivel_dificuldade_interno;
 	assign mid_idx_db = mid_idx;
 	assign max_idx_db = max_idx;
+
+	wire prep_cnt_fim;
+	
+	contador_m #(.M(10_000_000), .N(24)) PREP_COUNTER (
+		.clock(clock),
+		.zera_as(reset),
+		.zera_s(reset_prep_cnt),
+		.conta(1'b1),
+		.Q(),
+		.fim(prep_cnt_fim),
+		.meio()
+	);
+	
+	assign prep_done = prep_cnt_fim;
 
 endmodule

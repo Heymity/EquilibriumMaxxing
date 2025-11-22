@@ -2,7 +2,7 @@ module jogo_controller (
     input  wire clock,
     input  wire reset,
 
-    input  wire [2:0] position_led,
+    input  wire [3:0] position_led,
     input  signed [15:0] current_position,
 
     input  wire [1:0] nivel_dificuldade,
@@ -15,17 +15,18 @@ module jogo_controller (
 
     output wire ganhou_ponto,
     output wire perdeu_ponto,
-    output wire [9:0] pontuacao,
+    output wire [7:0] pontuacao,
 
-    output wire [31:0] M_eff,
-    output wire [31:0] mid_idx,
-    output wire [31:0] max_idx,
+    output wire [9:0] M_eff,
+    output wire [9:0] mid_idx,
+    output wire [9:0] max_idx,
 
     output wire [9:0] contador_jogo
 );
 
     wire isInPosition;
-    
+    wire [7:0] pontuacao_interna;
+
     comparador_jogo CJ (
         .clock(clock),
         .position_led(position_led),
@@ -36,14 +37,14 @@ module jogo_controller (
 
     contador_m_updown_limitado #(
         .M(1000),
-        .N(10)
+        .N(8)
     ) contador_pontos (
         .clock(clock),
         .zera_as(reset),
         .zera_s(reset_ponto),
         .inc(ganhou_ponto),
         .dec(perdeu_ponto),
-        .Q(pontuacao)
+        .Q(pontuacao_interna)
     );
 
     wire [9:0] contador_jogo_lvl0;
@@ -83,6 +84,9 @@ module jogo_controller (
     wire [9:0] contador_jogo_lvl23;
     wire ganhou_ponto_lvl23;
     wire perdeu_ponto_lvl23;
+    wire [9:0] M_eff_nivel23;
+    wire [9:0] mid_idx_nivel23;
+    wire [9:0] max_idx_nivel23;
 
     contador_m_redux_invertible #(
         .M(1000),
@@ -94,7 +98,7 @@ module jogo_controller (
         .zera_as(reset),
         .zera_s(reset_nivel),
         .conta(conta_nivel),
-        .score(pontuacao),
+        .score(pontuacao_interna),
         .count_up(isInPosition),
         .Q(contador_jogo_lvl23),
         .fim(ganhou_ponto_lvl23),
@@ -105,18 +109,18 @@ module jogo_controller (
     );
 
     assign M_eff =
-        (nivel_dificuldade == 2'b00) ? 32'd1000 :
-        (nivel_dificuldade == 2'b01) ? 32'd1000 :
+        (nivel_dificuldade == 2'b00) ? 10'd1000 :
+        (nivel_dificuldade == 2'b01) ? 10'd1000 :
                                        M_eff_nivel23;
 
     assign mid_idx =
-        (nivel_dificuldade == 2'b00) ? 32'd500 :
-        (nivel_dificuldade == 2'b01) ? 32'd500 :
+        (nivel_dificuldade == 2'b00) ? 10'd500 :
+        (nivel_dificuldade == 2'b01) ? 10'd500 :
                                        mid_idx_nivel23;
 
     assign max_idx =
-        (nivel_dificuldade == 2'b00) ? 32'd999 :
-        (nivel_dificuldade == 2'b01) ? 32'd999 :
+        (nivel_dificuldade == 2'b00) ? 10'd999 :
+        (nivel_dificuldade == 2'b01) ? 10'd999 :
                                        max_idx_nivel23;
 
     assign contador_jogo =
@@ -133,5 +137,7 @@ module jogo_controller (
         (nivel_dificuldade == 2'b00) ? 1'b0 :
         (nivel_dificuldade == 2'b01) ? perdeu_ponto_lvl1 :
                                        perdeu_ponto_lvl23;
+
+    assign pontuacao = pontuacao_interna;
 
 endmodule

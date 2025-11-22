@@ -3,9 +3,9 @@ module random_led_controller (
     input  wire reset,
     input  wire gerar_jogada,
     input  wire trigger,
-    input  wire [31:0] contador_jogo,
-    input  wire [31:0] mid_idx,
-    input  wire [31:0] max_idx,
+    input  wire [9:0] contador_jogo,
+    input  wire [9:0] mid_idx,
+    input  wire [9:0] max_idx,
     input  wire [1:0] nivel_dificuldade,
 
     output wire serial,
@@ -14,9 +14,9 @@ module random_led_controller (
 );
 
     wire carrega_frame;
-    wire [23:0] cor_led, led0, led1, led2, led3, led4, led5, led6, led7, led8, led9, led10;
+    wire [23:0] cor_led, cor_led_normal, cor_led_faded, led0, led1, led2, led3, led4, led5, led6, led7, led8, led9, led10;
 
-    led_color_mixxer COLOR_MIXX (
+    led_color_mixxer #(.N(10)) COLOR_MIXX (
         .clock(clock),
         .contador(contador_jogo),
         .mid_idx(mid_idx),

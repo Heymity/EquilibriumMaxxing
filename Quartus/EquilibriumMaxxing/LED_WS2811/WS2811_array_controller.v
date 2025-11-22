@@ -11,6 +11,12 @@ module WS2811_array_controller (
     input [23:0] external_led2,
     input [23:0] external_led3,
     input [23:0] external_led4,
+	input [23:0] external_led5,
+	input [23:0] external_led6,
+	input [23:0] external_led7,
+	input [23:0] external_led8,
+	input [23:0] external_led9,
+	input [23:0] external_led10,
 
 	output 		serial,
 	

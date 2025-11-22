@@ -1,4 +1,4 @@
-module jogo_uc (
+module equilibrium_maxxing_uc (
     input  wire        clock,
     input  wire        reset,
 
@@ -15,6 +15,8 @@ module jogo_uc (
     output reg         fade_trigger,
     output reg         trava_servo,
     output reg         calib_start,
+    output reg         reset_prep_cnt,
+    output reg         reset_nivel_locked,
 
     // Depuração
     output wire [2:0]  db_estado
@@ -33,7 +35,7 @@ module jogo_uc (
 
     always @(posedge clock or posedge reset) begin
         if (reset)
-            Eatual <= SelNivel;
+            Eatual <= Calibra;
         else
             Eatual <= Eprox;
     end
@@ -41,7 +43,7 @@ module jogo_uc (
     // guarda estado anterior para detectar transições
     always @(posedge clock or posedge reset) begin
         if (reset)
-            prev_E <= SelNivel;
+            prev_E <= Calibra;
         else
             prev_E <= Eatual;
     end
@@ -83,6 +85,8 @@ module jogo_uc (
         fade_trigger  <= (Eatual == Joga) && (prev_E != Joga);
         trava_servo   <= Eatual == SelNivel;
         calib_start   <= Eatual == Calibra;
+        reset_prep_cnt <= Eatual == ~Prep;
+        reset_nivel_locked <= (Eatual == SelNivel);
     end
 
 endmodule
