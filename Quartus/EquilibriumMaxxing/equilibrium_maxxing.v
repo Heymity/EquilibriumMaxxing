@@ -4,7 +4,7 @@ module equilibrium_maxxing (
 	input wire start_game,
 	input	 wire	RX,
 	input  wire sensorFimCurso,
-	
+    
 	output wire serial,
 	output wire db_serial,
 	output wire step,
@@ -13,9 +13,17 @@ module equilibrium_maxxing (
 	output wire ganhou_ponto,
 	output wire perdeu_ponto,
 	output [1:0] nivel_dificuldade,
-	
+
+	// Test override inputs (for TB): when high, FD will use these alavanca values
+	input  wire test_override_al,
+	input  wire signed [15:0] test_al1,
+	input  wire signed [15:0] test_al2,
+
+	// Expose UC state for debugging in testbench
+	output wire [2:0] db_uc_state,
+    
 	input	wire [9:0] SW,
-	
+    
 	output [6:0] HEX0,
 	output [6:0] HEX1,
 	output [6:0] HEX2,
@@ -27,7 +35,7 @@ module equilibrium_maxxing (
 	wire reset;
 	assign reset = SW[9];
 
-	wire [1:0] nivel_dificuldade;
+	// internal wires
 	wire gerar_nova_jogada;
 	wire conta_nivel;
 	wire reset_nivel;
@@ -63,7 +71,8 @@ module equilibrium_maxxing (
 		.trava_servo(trava_servo),
 		.calib_start(calib_start),
 		.reset_prep_cnt(reset_prep_cnt),
-		.reset_nivel_locked(reset_nivel_locked)
+		.reset_nivel_locked(reset_nivel_locked),
+		.db_estado(db_uc_state)
 	);
 	
 	EQUILIBRIUM_MAXXING_FD FD (
@@ -84,6 +93,10 @@ module equilibrium_maxxing (
 
 		.sensorFimCurso(sensorFimCurso),
 		.trava_servo(trava_servo),
+
+		.test_override_al(test_override_al),
+		.test_al1(test_al1),
+		.test_al2(test_al2),
 
 		.nivel_dificuldade(nivel_dificuldade),
 		.prep_done(prep_done),

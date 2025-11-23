@@ -18,6 +18,11 @@ module EQUILIBRIUM_MAXXING_FD (
     input  wire trava_servo,
     input  wire reset_prep_cnt,
     input  wire reset_nivel_locked,
+    
+    // Test override for alavanca values (when high, FD will use `test_al1/test_al2`)
+    input  wire test_override_al,
+    input  wire signed [15:0] test_al1,
+    input  wire signed [15:0] test_al2,
 
 	output wire [1:0] nivel_dificuldade,
 	output wire prep_done,
@@ -44,21 +49,23 @@ module EQUILIBRIUM_MAXXING_FD (
 	
 	output wire [15:0] db_current_pos
 );
+	wire signed [15:0] alavanca1_from_serial;
+	wire signed [15:0] alavanca2_from_serial;
 
-	wire signed [15:0] alavanca1;
-   wire signed [15:0] alavanca2;
-	
-	
 	serial2alavanca SERIAL (
-		.clock				(clock),
-		.reset				(reset),
-		.RX					(RX),
-			
-		.al1Bits				(alavanca1),
-		.al2Bits				(alavanca2),
+		.clock			(clock),
+		.reset			(reset),
+		.RX				(RX),
+        
+		.al1Bits			(alavanca1_from_serial),
+		.al2Bits			(alavanca2_from_serial),
 		.db_estado			(db_estado_serial2alavanca),
 		.db_estado_serial	(db_estado_serialreceiver)
 	);
+
+	// Final alavanca signals: choose serial values or test override values
+	wire signed [15:0] alavanca1 = test_override_al ? test_al1 : alavanca1_from_serial;
+	wire signed [15:0] alavanca2 = test_override_al ? test_al2 : alavanca2_from_serial;
 
 	hexa7seg HEX1 (
 		.hexa		(alavanca1[3:0]),
