@@ -1,3 +1,0 @@
-equilibrium_maxxing_top_tb.v
-equilibrium_maxxing_uc.v
-GameComponents/level_register.v

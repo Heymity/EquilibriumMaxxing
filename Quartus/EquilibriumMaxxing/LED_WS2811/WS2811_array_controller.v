@@ -61,6 +61,12 @@ module WS2811_array_controller (
         .external_led2(external_led2),
         .external_led3(external_led3),
         .external_led4(external_led4),
+		.external_led0(external_led5),
+        .external_led1(external_led6),
+        .external_led2(external_led7),
+        .external_led3(external_led8),
+        .external_led4(external_led9),
+		.external_led10(external_led10),
 	
 		// Control Inputs
 		.send_data				(send_data			),

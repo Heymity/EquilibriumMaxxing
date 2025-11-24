@@ -8,6 +8,7 @@ module pendulum_driver#(
 	input 	signed	[leverADCBits-1:0]	al1Bits, // Ponto Fixo 14.2
 	input		signed	[leverADCBits-1:0]	al2Bits, // Ponto Fixo 14.2
 	input   wire calib_done,
+	input   wire calib_start,
 	
 	output									step,
 	output									dir,
@@ -90,7 +91,8 @@ module pendulum_driver#(
 		.current_pos			(current_pos	),			// step/16 [fixedPointBaseBits-1:0]
 	
 		.sync_sim_clock		(sim_clock_sync),
-		.calib_done				(calib_done)
+		.calib_done				(calib_done),
+		.calib_start			(calib_start)
 	);	
 	
 	gravity_rom ROM_GRAVIDADE (

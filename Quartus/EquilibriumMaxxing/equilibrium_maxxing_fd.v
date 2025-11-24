@@ -142,7 +142,8 @@ module EQUILIBRIUM_MAXXING_FD (
 		.step(step),
 		.dir(dir),
 		.current_pos(current_pos),
-		.calib_done(calib_done)
+		.calib_done(calib_done),
+		.calib_start(calib_start)
 	);
 	
 	wire [3:0] led_alvo;

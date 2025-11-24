@@ -9,6 +9,7 @@ module simulator #(
 	input signed 		[fixedPointBaseBits+precision-1:0] 		alavanca2,
 	input signed 		[fixedPointBaseBits+precision-1:0]		gravity,
 	input wire											calib_done,
+	input wire											calib_start,
 	
 	output reg signed [fixedPointBaseBits-1:0]				delta_steps, 			// step/16
 	output reg signed [fixedPointBaseBits-1:0]				current_pos,			// step/16
@@ -18,7 +19,10 @@ module simulator #(
 
 	localparam	MAX_SPEED = 64'h0002_18DE_F400_0000;
 	localparam  NUM_STEPS = 16'd3200;
+	localparam signed MIN_POS = 16'sd0;
+	localparam signed MAX_POS = NUM_STEPS;
 
+	reg calib_active;
 	reg signed 			[fixedPointBaseBits+   precision-1:0]	total_acc; 				// step/16(2^precision) clk2
 	reg signed 			[fixedPointBaseBits+24+precision-1:0]	integrated_speed;		// step/16(2^precision) clk	
 	reg signed 			[fixedPointBaseBits+47+precision-1:0]	integrated_pos;		// step/16(2^precision)   
@@ -52,12 +56,29 @@ module simulator #(
 			integrated_pos		<= {(precision + fixedPointBaseBits + 47){1'b0}};
 			current_pos		 	<= {fixedPointBaseBits{1'b0}};
 			delta_steps		 	<= {fixedPointBaseBits{1'b0}};
+			calib_active <= 0;
+		end else if (calib_start) begin
+        	calib_active <= 1;
 		end else if (calib_done) begin
-			// Reset current_pos to 0 when calibration is complete
+        	calib_active <= 0; 
 			current_pos <= {fixedPointBaseBits{1'b0}};
 		end else begin
 			total_acc			=	(alavanca1 + alavanca2 + gravity);
-			
+				
+			if (!calib_active) begin
+
+				if (current_pos <= MIN_POS && total_acc < 0) begin
+					integrated_speed = 0;
+					total_acc = 0;
+				end
+
+				if (current_pos >= MAX_POS && total_acc > 0) begin
+					integrated_speed = 0;
+					total_acc = 0;
+				end
+
+			end
+
 			integrated_speed 	= integrated_speed + (total_acc * simPeriod);
 		
 			
