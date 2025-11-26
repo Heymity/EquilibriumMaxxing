@@ -65,7 +65,7 @@ module equilibrium_maxxing (
 		.reset_prep_cnt(reset_prep_cnt),
 		.reset_nivel_locked(reset_nivel_locked),
 		.external(external),
-		.db_estado(db_estado)
+		.db_estado(db_estado_uc_geral)
 	);
 	
 	EQUILIBRIUM_MAXXING_FD FD (
@@ -88,7 +88,7 @@ module equilibrium_maxxing (
 		.end_right(end_right),
 		.trava_servo(trava_servo),
 
-		.nivel_dificuldade(nivel_dificuldade),
+		.nivel_dificuldade(),
 		.prep_done(prep_done),
 		.reset_prep_cnt(reset_prep_cnt),
 		.reset_nivel_locked(reset_nivel_locked),
@@ -104,17 +104,17 @@ module equilibrium_maxxing (
 		.perdeu_ponto(perdeu_ponto),
 		.pontuacao(pontuacao),
 	
-		.db_al1(db_alavanca1),
-		.db_al2(db_alavanca2),
+		.db_al1(),
+		.db_al2(),
 		
 		.db_estado_serial2alavanca	(db_estado_serial2alavanca	),
 		.db_estado_serialreceiver	(db_estado_serialreceiver	),
 		
 		.db_current_pos(db_current_pos),
-		.nivel_dificuldade_locked_db(nivel_dificuldade_locked_db),
+		.nivel_dificuldade_locked_db(),
 		.start_game_db(start_game_db),
-		.contador_jogo_db(contador_jogo_db),
-		.cor_led_db(cor_led_db)
+		.contador_jogo_db(),
+		.cor_led_db()
 	);
 	
 	assign {HEX5, HEX4, HEX3, HEX2, HEX1, HEX0} = 
@@ -141,7 +141,7 @@ module equilibrium_maxxing (
 	);
 
 	hexa7seg UC_GERAL (
-		.hexa		(db_estado_uc_geral),
+		.hexa		({1'b0, db_estado_uc_geral}),
 	   .display	(db_estado_uc_geral_7seg)
 	);
 		
