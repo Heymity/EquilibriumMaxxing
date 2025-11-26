@@ -12,17 +12,14 @@ module EQUILIBRIUM_MAXXING_FD (
 		
 	input	wire fade_trigger,
 	
-	input   wire calib_start,
+	input   wire calib,
     
-    input  wire sensorFimCurso,
+    input  wire end_left,
+    input  wire end_right,
     input  wire trava_servo,
     input  wire reset_prep_cnt,
     input  wire reset_nivel_locked,
-    
-    // Test override for alavanca values (when high, FD will use `test_al1/test_al2`)
-    input  wire test_override_al,
-    input  wire signed [15:0] test_al1,
-    input  wire signed [15:0] test_al2,
+	input  wire external,
 
 	output wire [1:0] nivel_dificuldade,
 	output wire prep_done,
@@ -47,25 +44,29 @@ module EQUILIBRIUM_MAXXING_FD (
 	output wire	[6:0] db_estado_serial2alavanca,
 	output wire	[6:0] db_estado_serialreceiver,
 	
-	output wire [15:0] db_current_pos
-);
-	wire signed [15:0] alavanca1_from_serial;
-	wire signed [15:0] alavanca2_from_serial;
+	output wire [15:0] db_current_pos,
+	output wire start_game_db,
 
+	output wire [9:0] contador_jogo_db,
+	output wire nivel_dificuldade_locked_db,
+	output wire [23:0] cor_led_db
+);
+
+	wire signed [15:0] alavanca1;
+   wire signed [15:0] alavanca2;
+	
+	assign contador_jogo_db = contador_jogo;
+	
 	serial2alavanca SERIAL (
-		.clock			(clock),
-		.reset			(reset),
-		.RX				(RX),
-        
-		.al1Bits			(alavanca1_from_serial),
-		.al2Bits			(alavanca2_from_serial),
+		.clock				(clock),
+		.reset				(reset),
+		.RX					(RX),
+			
+		.al1Bits				(alavanca1),
+		.al2Bits				(alavanca2),
 		.db_estado			(db_estado_serial2alavanca),
 		.db_estado_serial	(db_estado_serialreceiver)
 	);
-
-	// Final alavanca signals: choose serial values or test override values
-	wire signed [15:0] alavanca1 = test_override_al ? test_al1 : alavanca1_from_serial;
-	wire signed [15:0] alavanca2 = test_override_al ? test_al2 : alavanca2_from_serial;
 
 	hexa7seg HEX1 (
 		.hexa		(alavanca1[3:0]),
@@ -111,7 +112,9 @@ module EQUILIBRIUM_MAXXING_FD (
 		.alavanca1(alavanca1),
 		.alavanca2(alavanca2),
 		.start_game(start_game),
-		.nivel_reg(nivel_dificuldade_interno)
+		.start_game_db(start_game_db),
+		.nivel_reg(nivel_dificuldade_interno),
+		.nivel_locked_db(nivel_dificuldade_locked_db)
 	);
 	
 	wire signed [15:0] current_pos;
@@ -122,17 +125,7 @@ module EQUILIBRIUM_MAXXING_FD (
 	wire signed [15:0] al1_drive;
 	wire signed [15:0] al2_drive;
 	wire calib_done;
-
-	pendulum_input_mux INPUT_MUX (
-		.alavanca1(alavanca1),
-		.alavanca2(alavanca2),
-		.calib_start(calib_start),
-		.sensorFimCurso(sensorFimCurso),
-		.trava_servo(trava_servo),
-		.al1_drive(al1_drive),
-		.al2_drive(al2_drive),
-		.calib_done(calib_done)
-	);
+	assign calib_done = end_left || end_right;
 
 	pendulum_driver PEND (
 		.clock(clock),
@@ -142,8 +135,9 @@ module EQUILIBRIUM_MAXXING_FD (
 		.step(step),
 		.dir(dir),
 		.current_pos(current_pos),
-		.calib_done(calib_done),
-		.calib_start(calib_start)
+		.end_left(end_left),
+		.end_right(end_right),
+		.calib(calib)
 	);
 	
 	wire [3:0] led_alvo;
@@ -157,11 +151,13 @@ module EQUILIBRIUM_MAXXING_FD (
 		.mid_idx(mid_idx),
 		.max_idx(max_idx),
 		.nivel_dificuldade(nivel_dificuldade_interno),
+		.external(external),
 	
 		.serial(serial),
 		.db_serial(db_serial),
 	
-		.position_led(led_alvo)
+		.position_led(led_alvo),
+		.cor_led_db(cor_led_db)
 	);
 	
 	wire [9:0] contador_jogo;
@@ -196,7 +192,7 @@ module EQUILIBRIUM_MAXXING_FD (
 
 	wire prep_cnt_fim;
 	
-	contador_m #(.M(10_000_000), .N(24)) PREP_COUNTER (
+	contador_m #(.M(500), .N(24)) PREP_COUNTER (
 		.clock(clock),
 		.zera_as(reset),
 		.zera_s(reset_prep_cnt),

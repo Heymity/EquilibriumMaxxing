@@ -3,6 +3,7 @@ module random_led_controller (
     input  wire reset,
     input  wire gerar_jogada,
     input  wire trigger,
+    input  wire external,
     input  wire [9:0] contador_jogo,
     input  wire [9:0] mid_idx,
     input  wire [9:0] max_idx,
@@ -10,9 +11,11 @@ module random_led_controller (
 
     output wire serial,
     output wire db_serial,
-    output wire [3:0] position_led
+    output wire [3:0] position_led,
+    output wire [23:0] cor_led_db
 );
 
+    assign cor_led_db = cor_led;
     wire carrega_frame;
     wire [23:0] cor_led, cor_led_normal, cor_led_faded, led0, led1, led2, led3, led4, led5, led6, led7, led8, led9, led10;
 
@@ -69,7 +72,7 @@ module random_led_controller (
 
         .led_count(8'd11),
         .enable(1'b1),             // sempre enviando
-        .use_external_rgb(1'b1),   // usa os LEDs gerados
+        .use_external_rgb(external),   // usa os LEDs gerados
 
         .external_led0(led0),
         .external_led1(led1),

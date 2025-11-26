@@ -1,29 +1,20 @@
 module equilibrium_maxxing (
 	input  wire clock,
 
-	input wire start_game,
-	input	 wire	RX,
-	input  wire sensorFimCurso,
-    
+	input  wire start_game,
+	input  wire	RX,
+	input  wire end_left,
+	input  wire end_right,
+	
 	output wire serial,
 	output wire db_serial,
 	output wire step,
 	output wire dir,
 	output wire [7:0] pontuacao,
-	output wire ganhou_ponto,
-	output wire perdeu_ponto,
-	output [1:0] nivel_dificuldade,
 
-	// Test override inputs (for TB): when high, FD will use these alavanca values
-	input  wire test_override_al,
-	input  wire signed [15:0] test_al1,
-	input  wire signed [15:0] test_al2,
 
-	// Expose UC state for debugging in testbench
-	output wire [2:0] db_uc_state,
-    
 	input	wire [9:0] SW,
-    
+	
 	output [6:0] HEX0,
 	output [6:0] HEX1,
 	output [6:0] HEX2,
@@ -32,19 +23,18 @@ module equilibrium_maxxing (
 	output [6:0] HEX5
 );
 	
-	wire reset;
 	assign reset = SW[9];
 
-	// internal wires
 	wire gerar_nova_jogada;
 	wire conta_nivel;
 	wire reset_nivel;
 	wire fade_trigger;
 	wire prep_done;
 	wire trava_servo;
-	wire calib_start;
+	wire calib;
 	wire reset_prep_cnt;
 	wire reset_nivel_locked;
+	wire external;
 	
 	wire ponto_evento = ganhou_ponto | perdeu_ponto;
 	
@@ -52,6 +42,8 @@ module equilibrium_maxxing (
 	wire [27:0] db_7seg_alavanca2;
 	wire [6:0] db_estado_serial2alavanca;
     wire [6:0] db_estado_serialreceiver;
+	wire [6:0] db_estado_uc_geral_7seg;
+	wire [2:0] db_estado_uc_geral;
 	wire [15:0] db_current_pos;
 	wire [27:0] db_current_pos_7seg;
 	
@@ -59,20 +51,21 @@ module equilibrium_maxxing (
 		.clock(clock),
 		.reset(reset),
 	
-		.start_game(start_game),
+		.start_game(!start_game),
 		.ponto_evento(ponto_evento),
 		.prep_done(prep_done),
-		.sensorFimCurso(sensorFimCurso),
+		.sensorFimCurso(end_left | end_right),
 	
 		.gerar_nova_jogada(gerar_nova_jogada),
 		.conta_nivel(conta_nivel),
 		.reset_nivel(reset_nivel),
 		.fade_trigger(fade_trigger),
 		.trava_servo(trava_servo),
-		.calib_start(calib_start),
+		.calib(calib),
 		.reset_prep_cnt(reset_prep_cnt),
 		.reset_nivel_locked(reset_nivel_locked),
-		.db_estado(db_uc_state)
+		.external(external),
+		.db_estado(db_estado)
 	);
 	
 	EQUILIBRIUM_MAXXING_FD FD (
@@ -81,7 +74,7 @@ module equilibrium_maxxing (
 	
 		.RX(RX),
 	
-		.start_game(start_game),
+		.start_game(!start_game),
 		.gerar_nova_jogada(gerar_nova_jogada),
 	
 		.conta_nivel(conta_nivel),
@@ -89,19 +82,17 @@ module equilibrium_maxxing (
 	
 		.fade_trigger(fade_trigger),
 
-		.calib_start(calib_start),
+		.calib(calib),
 
-		.sensorFimCurso(sensorFimCurso),
+		.end_left(end_left),
+		.end_right(end_right),
 		.trava_servo(trava_servo),
-
-		.test_override_al(test_override_al),
-		.test_al1(test_al1),
-		.test_al2(test_al2),
 
 		.nivel_dificuldade(nivel_dificuldade),
 		.prep_done(prep_done),
 		.reset_prep_cnt(reset_prep_cnt),
 		.reset_nivel_locked(reset_nivel_locked),
+		.external(external),
 	
 		.serial(serial),
 		.db_serial(db_serial),
@@ -113,19 +104,24 @@ module equilibrium_maxxing (
 		.perdeu_ponto(perdeu_ponto),
 		.pontuacao(pontuacao),
 	
-		.db_al1(db_7seg_alavanca1),
-		.db_al2(db_7seg_alavanca2),
+		.db_al1(db_alavanca1),
+		.db_al2(db_alavanca2),
 		
 		.db_estado_serial2alavanca	(db_estado_serial2alavanca	),
 		.db_estado_serialreceiver	(db_estado_serialreceiver	),
 		
-		.db_current_pos(db_current_pos)
+		.db_current_pos(db_current_pos),
+		.nivel_dificuldade_locked_db(nivel_dificuldade_locked_db),
+		.start_game_db(start_game_db),
+		.contador_jogo_db(contador_jogo_db),
+		.cor_led_db(cor_led_db)
 	);
 	
 	assign {HEX5, HEX4, HEX3, HEX2, HEX1, HEX0} = 
 		SW[1:0] == 2'b00 ? 	{db_estado_serial2alavanca, db_estado_serialreceiver, db_7seg_alavanca1} :
 		SW[1:0] == 2'b01 ?	{db_estado_serial2alavanca, db_estado_serialreceiver, db_7seg_alavanca2} :
-		SW[1:0] == 2'b10 ?	{db_estado_serial2alavanca, db_estado_serialreceiver, db_current_pos_7seg} : 42'd0;
+		SW[1:0] == 2'b10 ?	{db_estado_serial2alavanca, db_estado_serialreceiver, db_current_pos_7seg} : 
+		SW[1:0] == 2'b11 ?	{db_estado_uc_geral_7seg, {35{1'b1}}} : 42'd0;
 
 	hexa7seg CURRENT_POS_HEX0 (
 		.hexa		(db_current_pos[3:0]),
@@ -142,6 +138,11 @@ module equilibrium_maxxing (
 	hexa7seg CURRENT_POS_HEX3 (
 		.hexa		(db_current_pos[15:12]),
 	   .display	(db_current_pos_7seg[27:21])
+	);
+
+	hexa7seg UC_GERAL (
+		.hexa		(db_estado_uc_geral),
+	   .display	(db_estado_uc_geral_7seg)
 	);
 		
 endmodule

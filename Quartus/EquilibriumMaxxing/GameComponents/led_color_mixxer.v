@@ -17,7 +17,7 @@ module led_color_mixxer #(
     integer prod;
     integer prod2;
     integer val;
-    integer dist;
+    integer distancia;
     integer delta;
     
     // tabela de recíprocos pré-calculados: recip[i] ~= floor(255<<RECP_SHIFT / i)
@@ -43,6 +43,11 @@ module led_color_mixxer #(
         R = 8'd0;
         G = 8'd0;
         B = 8'd0;
+		  prod = 8'd0;
+		  prod2 = 8'd0;
+		  distancia = 8'd0;
+		  delta = 8'd0;
+		  val = 8'd0;
 
         if (cnt == mid) begin
             // Amarelo puro
@@ -64,11 +69,11 @@ module led_color_mixxer #(
         end else begin
             // amarelo -> verde: R decresce de 255..0 conforme (cnt-mid)/(max-mid)
             G = 8'd255;
-            dist = (maxv > mid) ? (maxv - mid) : 1;
+            distancia = (maxv > mid) ? (maxv - mid) : 1;
             delta = cnt - mid;
-            if (dist > 0) begin
-                prod2 = delta * recip_table[dist];
-                // value = (delta * 255) / dist
+            if (distancia > 0) begin
+                prod2 = delta * recip_table[distancia];
+                // value = (delta * 255) / distancia
                 val = (prod2 >> RECP_SHIFT);
                 if (val > 255) val = 255;
                 R = 8'd255 - (val & 8'hFF);

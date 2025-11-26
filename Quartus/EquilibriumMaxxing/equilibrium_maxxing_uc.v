@@ -14,9 +14,10 @@ module equilibrium_maxxing_uc (
     output reg         reset_nivel,
     output reg         fade_trigger,
     output reg         trava_servo,
-    output reg         calib_start,
+    output reg         calib,
     output reg         reset_prep_cnt,
     output reg         reset_nivel_locked,
+    output reg         external,
 
     // Depuração
     output wire [2:0]  db_estado
@@ -84,9 +85,10 @@ module equilibrium_maxxing_uc (
         reset_nivel   <= Eatual == Calibra || Eatual == SelNivel;
         fade_trigger  <= (Eatual == Joga) && (prev_E != Joga);
         trava_servo   <= Eatual == SelNivel;
-        calib_start   <= Eatual == Calibra;
+        calib   <= Eatual == Calibra;
         reset_prep_cnt <= Eatual == ~Prep;
-        reset_nivel_locked <= (Eatual == SelNivel);
+        reset_nivel_locked <= (Eatual == Calibra);
+        external <= Eatual == Joga || Eatual == genNext || Eatual == Prep;
     end
 
 endmodule

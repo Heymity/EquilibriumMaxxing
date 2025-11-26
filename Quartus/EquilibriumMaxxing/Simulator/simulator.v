@@ -8,8 +8,10 @@ module simulator #(
 	input signed 		[fixedPointBaseBits+precision-1:0]	 	alavanca1,
 	input signed 		[fixedPointBaseBits+precision-1:0] 		alavanca2,
 	input signed 		[fixedPointBaseBits+precision-1:0]		gravity,
-	input wire											calib_done,
-	input wire											calib_start,
+
+	input wire											calib,
+	input wire											end_left,
+	input wire											end_right,
 	
 	output reg signed [fixedPointBaseBits-1:0]				delta_steps, 			// step/16
 	output reg signed [fixedPointBaseBits-1:0]				current_pos,			// step/16
@@ -19,10 +21,7 @@ module simulator #(
 
 	localparam	MAX_SPEED = 64'h0002_18DE_F400_0000;
 	localparam  NUM_STEPS = 16'd3200;
-	localparam signed MIN_POS = 16'sd0;
-	localparam signed MAX_POS = NUM_STEPS;
 
-	reg calib_active;
 	reg signed 			[fixedPointBaseBits+   precision-1:0]	total_acc; 				// step/16(2^precision) clk2
 	reg signed 			[fixedPointBaseBits+24+precision-1:0]	integrated_speed;		// step/16(2^precision) clk	
 	reg signed 			[fixedPointBaseBits+47+precision-1:0]	integrated_pos;		// step/16(2^precision)   
@@ -56,29 +55,23 @@ module simulator #(
 			integrated_pos		<= {(precision + fixedPointBaseBits + 47){1'b0}};
 			current_pos		 	<= {fixedPointBaseBits{1'b0}};
 			delta_steps		 	<= {fixedPointBaseBits{1'b0}};
-			calib_active <= 0;
-		end else if (calib_start) begin
-        	calib_active <= 1;
-		end else if (calib_done) begin
-        	calib_active <= 0; 
-			current_pos <= {fixedPointBaseBits{1'b0}};
-		end else begin
-			total_acc			=	(alavanca1 + alavanca2 + gravity);
-				
-			if (!calib_active) begin
+		end else if (calib) begin
+			delta_steps 		<= 1;
 
-				if (current_pos <= MIN_POS && total_acc < 0) begin
-					integrated_speed = 0;
-					total_acc = 0;
-				end
-
-				if (current_pos >= MAX_POS && total_acc > 0) begin
-					integrated_speed = 0;
-					total_acc = 0;
-				end
-
+			if (end_right) begin
+				integrated_speed = 0;
+				integrated_pos = 79'd0;
 			end
 
+			if (end_left) begin
+				integrated_speed = 0;
+				integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] = 16'd1600;
+				integrated_pos[47+precision-1:0] = 63'd0;
+			end
+
+		end else begin
+			total_acc			=	(alavanca1 + alavanca2 + gravity);
+			
 			integrated_speed 	= integrated_speed + (total_acc * simPeriod);
 		
 			
@@ -89,8 +82,18 @@ module simulator #(
 					integrated_speed = MAX_SPEED;
 				end
 			end	
+
+			if (integrated_pos < 79'sd0) begin
+				integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] = 16'sd0;
+				integrated_pos[47+precision-1:0] = 63'd0;
+				integrated_speed = 0;
+			end else if (integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] > 16'sd1599) begin
+				integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] = 16'sd1599;
+				integrated_pos[47+precision-1:0] = 63'd0;
+				integrated_speed = 0;
+			end
 			
-			
+
 			integrated_pos 	= integrated_pos + (integrated_speed * simPeriod);
 			
 			delta_steps 		= integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] - current_pos; 
