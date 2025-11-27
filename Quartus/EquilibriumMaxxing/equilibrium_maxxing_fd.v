@@ -180,7 +180,7 @@ module EQUILIBRIUM_MAXXING_FD (
 		.perdeu_ponto(perdeu_ponto),
 		.pontuacao(pontuacao),
 	
-		.M_eff(M_eff_db),
+		.M_eff(),
 		.mid_idx(mid_idx),
 		.max_idx(max_idx),
 		.contador_jogo(contador_jogo)
