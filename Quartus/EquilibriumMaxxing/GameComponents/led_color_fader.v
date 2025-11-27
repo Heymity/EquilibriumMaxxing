@@ -3,7 +3,7 @@ module led_color_fader (
     input  wire        reset,
     input  wire        trigger,           // pulso: início da jogada
     input  wire [23:0] cor_in,
-    input  wire [9:0] max_idx,
+    input  wire [28:0] max_idx,
     output reg  [23:0] cor_out
 );
 

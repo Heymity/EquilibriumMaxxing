@@ -11,6 +11,8 @@ module equilibrium_maxxing_tb;
     reg RX;
     reg end_left;
     reg end_right;
+    // Fast simulation mode: forces internal events so long-running counters don't block
+    reg SIM_FAST = 1'b1;
     
     // Saídas
     wire serial;
@@ -65,6 +67,8 @@ module equilibrium_maxxing_tb;
         end
     endtask
     
+    integer k;
+
     // Simulação principal
     initial begin
         $dumpfile("equilibrium_maxxing_tb.vcd");
@@ -123,17 +127,46 @@ module equilibrium_maxxing_tb;
         release DUT.FD.SERIAL.al1Bits;
         release DUT.FD.SERIAL.al2Bits;
         
-        // Aguardar transição para Prep
-        wait_cycles(50);
+        // Aguardar transição para Prep (or force it in fast-sim)
+        if (SIM_FAST) begin
+            // prep_done is produced inside FD; force it briefly to simulate the prep finishing
+            $display("[%0t] SIM_FAST: forçando prep_done para acelerar transição", $time);
+            force DUT.FD.prep_done = 1'b1;
+            wait_cycles(2);
+            release DUT.FD.prep_done;
+            wait_cycles(2);
+        end else begin
+            wait_cycles(50);
+        end
         $display("[%0t] Estado: %b (esperado Prep=010)", $time, db_estado);
         
         // ===== TESTE DE GERAÇÃO DE JOGADA =====
         $display("\n=== TESTE: GERAÇÃO DE JOGADA ===");
-        
-        repeat(10) begin
-            wait_cycles(50);
-            $display("[%0t] Estado: %b, position_led: %d, current_pos: %d", 
-                     $time, db_estado, position_led, db_current_pos);
+
+        if (SIM_FAST) begin
+            // Simule algumas jogadas forçando ganho de ponto para transitar Joga->Prep
+            for (k = 0; k < 3; k = k + 1) begin
+                $display("[%0t] SIM_FAST: forçando geracao de jogada/prep (iter %0d)", $time, k);
+                // Garante que há uma nova jogada pronta
+                force DUT.FD.prep_done = 1'b1;
+                wait_cycles(1);
+                release DUT.FD.prep_done;
+                wait_cycles(2);
+
+                // Agora force um ponto ganho para voltar a PREP
+                force DUT.FD.ganhou_ponto = 1'b1;
+                wait_cycles(1);
+                release DUT.FD.ganhou_ponto;
+                wait_cycles(5);
+
+                $display("[%0t] Estado: %b, position_led: %d, current_pos: %d", $time, db_estado, position_led, db_current_pos);
+            end
+        end else begin
+            repeat(10) begin
+                wait_cycles(50);
+                $display("[%0t] Estado: %b, position_led: %d, current_pos: %d", 
+                         $time, db_estado, position_led, db_current_pos);
+            end
         end
         
         // ===== TESTE DE CALIBRAÇÃO (MANUAL) =====

@@ -15,14 +15,9 @@ module random_led_controller (
     output wire [23:0] cor_led_db
 );
 
+    assign cor_led_db = cor_led;
     wire carrega_frame;
-    wire [23:0] cor_led_normal, cor_led_faded;
-    wire [23:0] led0, led1, led2, led3, led4, led5, led6, led7, led8, led9, led10;
-    wire word_sent;
-    reg  [23:0] cor_led_reg;
-    wire [23:0] cor_led_next = (nivel_dificuldade == 2'b11) ? cor_led_faded : cor_led_normal;
-
-    assign cor_led_db = cor_led_reg;
+    wire [23:0] cor_led, cor_led_normal, cor_led_faded, led0, led1, led2, led3, led4, led5, led6, led7, led8, led9, led10;
 
     led_color_mixxer #(.N(29)) COLOR_MIXX (
         .clock(clock),
@@ -41,12 +36,7 @@ module random_led_controller (
         .cor_out(cor_led_faded)
     );
 
-    always @(posedge clock or posedge reset) begin
-        if (reset)
-            cor_led_reg <= 24'd0;
-        else if (word_sent)
-            cor_led_reg <= cor_led_next;
-    end
+    assign cor_led = nivel_dificuldade == 2'b11 ? cor_led_faded : cor_led_normal;
 
     random_led_controller_uc UC_RAND (
         .clock(clock),
@@ -59,7 +49,7 @@ module random_led_controller (
         .clock(clock),
         .reset(reset),
         .gerar_jogada(gerar_jogada),
-        .cor_led(cor_led_reg),
+        .cor_led(cor_led),
         .carrega_frame(carrega_frame),
 
         .led_select(position_led),
@@ -97,7 +87,6 @@ module random_led_controller (
         .external_led10(led10),
 
         .serial(serial),
-        .word_sent(word_sent),
         .db_serial(db_serial)
     );
 
