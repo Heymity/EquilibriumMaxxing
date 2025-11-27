@@ -11,57 +11,48 @@ module led_color_mixxer #(
     output reg  [23:0]         cor_led
 );
 
-    integer mid;
-    integer maxv;
-    integer cnt;
-    integer prod;
-    integer prod2;
-    integer val;
-    integer distancia;
-    integer delta;
-    
-    // tabela de recíprocos pré-calculados: recip[i] ~= floor(255<<RECP_SHIFT / i)
-    localparam integer TABLE_SIZE = (1<<N);
-    reg [RECP_WIDTH-1:0] recip_table [0:TABLE_SIZE-1];
-    integer i;
-
-    initial begin
-        recip_table[0] = 0;
-        for (i = 1; i < TABLE_SIZE; i = i + 1) begin
-            recip_table[i] = (255 << RECP_SHIFT) / i;
-        end
-    end
+    // Use wide regs for intermediate arithmetic (to support N up to 29)
+    reg [63:0] midv;
+    reg [63:0] maxv;
+    reg [63:0] cntv;
+    reg [63:0] prod;
+    reg [63:0] prod2;
+    reg [63:0] val64;
+    reg [63:0] distancia;
+    reg [63:0] delta;
 
     reg [7:0] R, G, B;
 
     always @(*) begin
-        mid = mid_idx;
+        // widen inputs to 64-bit temporaries to avoid overflow in multiplications
+        midv = mid_idx;
         maxv = max_idx;
-        cnt = contador;
+        cntv = contador;
 
         // default
         R = 8'd0;
         G = 8'd0;
         B = 8'd0;
-		  prod = 8'd0;
-		  prod2 = 8'd0;
-		  distancia = 8'd0;
-		  delta = 8'd0;
-		  val = 8'd0;
+        prod = 64'd0;
+        prod2 = 64'd0;
+        distancia = 64'd0;
+        delta = 64'd0;
+        val64 = 64'd0;
 
-        if (cnt == mid) begin
+        if (cntv == midv) begin
             // Amarelo puro
             R = 8'd255;
             G = 8'd255;
             B = 8'd0;
-        end else if (cnt < mid) begin
+        end else if (cntv < midv) begin
             // vermelho -> amarelo: G cresce de 0..255 conforme cnt/mid
             R = 8'd255;
-            if (mid > 0) begin
-                // G = (cnt * 255) / mid  => use recip_table[mid]
-                // produto largura: cnt (<=TABLE_SIZE-1) * recip (RECP_WIDTH)
-                prod = cnt * recip_table[mid];
-                G = ((prod >> RECP_SHIFT) & 8'hFF);
+            if (midv > 0) begin
+                // G = (cnt * 255) / mid
+                prod = cntv * 64'd255;
+                val64 = prod / midv;
+                if (val64 > 255) val64 = 255;
+                G = val64[7:0];
             end else begin
                 G = 8'd255;
             end
@@ -69,14 +60,13 @@ module led_color_mixxer #(
         end else begin
             // amarelo -> verde: R decresce de 255..0 conforme (cnt-mid)/(max-mid)
             G = 8'd255;
-            distancia = (maxv > mid) ? (maxv - mid) : 1;
-            delta = cnt - mid;
+            distancia = (maxv > midv) ? (maxv - midv) : 64'd1;
+            delta = cntv - midv;
             if (distancia > 0) begin
-                prod2 = delta * recip_table[distancia];
-                // value = (delta * 255) / distancia
-                val = (prod2 >> RECP_SHIFT);
-                if (val > 255) val = 255;
-                R = 8'd255 - (val & 8'hFF);
+                prod2 = delta * 64'd255;
+                val64 = prod2 / distancia;
+                if (val64 > 255) val64 = 255;
+                R = 8'd255 - val64[7:0];
             end else begin
                 R = 8'd0;
             end

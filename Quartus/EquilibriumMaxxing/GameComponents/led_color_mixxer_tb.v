@@ -1,5 +1,4 @@
 `timescale 1ns/1ps
-`timescale 1ns/1ps
 module led_color_mixxer_tb;
     parameter N = 8;
 
@@ -32,7 +31,7 @@ module led_color_mixxer_tb;
         max_idx = 8'd200;
         contador = mid_idx; // começa no meio
         counting_up = 1'b1;
-        prev_cor = 24'hxxxxxx;
+        prev_cor = 24'h000000; // initialize to known value (avoid X)
         phase2_started = 1'b0;
     end
 

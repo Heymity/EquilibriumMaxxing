@@ -47,7 +47,7 @@ module EQUILIBRIUM_MAXXING_FD (
 	output wire [15:0] db_current_pos,
 	output wire start_game_db,
 
-	output wire [9:0] contador_jogo_db,
+	output wire [28:0] contador_jogo_db,
 	output wire nivel_dificuldade_locked_db,
 	output wire [23:0] cor_led_db
 );
@@ -118,7 +118,7 @@ module EQUILIBRIUM_MAXXING_FD (
 	);
 	
 	wire signed [15:0] current_pos;
-	wire [9:0] mid_idx, max_idx;
+	wire [28:0] mid_idx, max_idx;
 	
 	assign db_current_pos = current_pos;
 	
@@ -160,7 +160,7 @@ module EQUILIBRIUM_MAXXING_FD (
 		.cor_led_db(cor_led_db)
 	);
 	
-	wire [9:0] contador_jogo;
+	wire [28:0] contador_jogo;
 	
 	jogo_controller JOGO (
 		.clock(clock),
@@ -185,14 +185,10 @@ module EQUILIBRIUM_MAXXING_FD (
 		.max_idx(max_idx),
 		.contador_jogo(contador_jogo)
 	);
-	
-	assign nivel_dificuldade = nivel_dificuldade_interno;
-	assign mid_idx_db = mid_idx;
-	assign max_idx_db = max_idx;
 
 	wire prep_cnt_fim;
 	
-	contador_m #(.M(500), .N(24)) PREP_COUNTER (
+	contador_m #(.M(25_000_000), .N(25)) PREP_COUNTER (
 		.clock(clock),
 		.zera_as(reset),
 		.zera_s(reset_prep_cnt),

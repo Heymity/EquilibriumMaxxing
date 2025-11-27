@@ -19,6 +19,7 @@ module WS2811_array_controller (
 	input [23:0] external_led10,
 
 	output 		serial,
+	output		word_sent,
 	
 	output		db_serial
 );

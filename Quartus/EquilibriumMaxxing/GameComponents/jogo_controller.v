@@ -17,11 +17,11 @@ module jogo_controller (
     output wire perdeu_ponto,
     output wire [7:0] pontuacao,
 
-    output wire [9:0] M_eff,
-    output wire [9:0] mid_idx,
-    output wire [9:0] max_idx,
+    output wire [28:0] M_eff,
+    output wire [28:0] mid_idx,
+    output wire [28:0] max_idx,
 
-    output wire [9:0] contador_jogo
+    output wire [28:0] contador_jogo
 );
 
     wire isInPosition;
@@ -47,12 +47,12 @@ module jogo_controller (
         .Q(pontuacao_interna)
     );
 
-    wire [9:0] contador_jogo_lvl0;
+    wire [28:0] contador_jogo_lvl0;
     wire ganhou_ponto_lvl0;
 
     contador_m_half #(
-        .M(1000),
-        .N(10)
+        .M(500_000_000),
+        .N(29)
     ) contador_jogo_nivel_0 (
         .clock(clock),
         .zera_as(reset),
@@ -63,13 +63,13 @@ module jogo_controller (
         .meio()
     );
 
-    wire [9:0] contador_jogo_lvl1;
+    wire [28:0] contador_jogo_lvl1;
     wire ganhou_ponto_lvl1;
     wire perdeu_ponto_lvl1;
 
     contador_m_invertible #(
-        .M(1000),
-        .N(10)
+        .M(500_000_000),
+        .N(29)
     ) contador_jogo_nivel_1 (
         .clock(clock),
         .zera_as(reset),
@@ -81,18 +81,18 @@ module jogo_controller (
         .inicio(perdeu_ponto_lvl1)
     );
 
-    wire [9:0] contador_jogo_lvl23;
+    wire [28:0] contador_jogo_lvl23;
     wire ganhou_ponto_lvl23;
     wire perdeu_ponto_lvl23;
-    wire [9:0] M_eff_nivel23;
-    wire [9:0] mid_idx_nivel23;
-    wire [9:0] max_idx_nivel23;
+    wire [28:0] M_eff_nivel23;
+    wire [28:0] mid_idx_nivel23;
+    wire [28:0] max_idx_nivel23;
 
     contador_m_redux_invertible #(
-        .M(1000),
-        .N(10),
+        .M(500_000_000),
+        .N(29),
         .SCORE_N(8),
-        .MIN_M(300)
+        .MIN_M(250_000_000)
     ) contador_jogo_nivel_2_3 (
         .clock(clock),
         .zera_as(reset),
@@ -109,18 +109,18 @@ module jogo_controller (
     );
 
     assign M_eff =
-        (nivel_dificuldade == 2'b00) ? 10'd1000 :
-        (nivel_dificuldade == 2'b01) ? 10'd1000 :
+        (nivel_dificuldade == 2'b00) ? 29'd500_000_000 :
+        (nivel_dificuldade == 2'b01) ? 29'd500_000_000 :
                                        M_eff_nivel23;
 
     assign mid_idx =
-        (nivel_dificuldade == 2'b00) ? 10'd500 :
-        (nivel_dificuldade == 2'b01) ? 10'd500 :
+        (nivel_dificuldade == 2'b00) ? 29'd250_000_000 :
+        (nivel_dificuldade == 2'b01) ? 29'd250_000_000 :
                                        mid_idx_nivel23;
 
     assign max_idx =
-        (nivel_dificuldade == 2'b00) ? 10'd999 :
-        (nivel_dificuldade == 2'b01) ? 10'd999 :
+        (nivel_dificuldade == 2'b00) ? 29'd499_999_999 :
+        (nivel_dificuldade == 2'b01) ? 29'd499_999_999 :
                                        max_idx_nivel23;
 
     assign contador_jogo =
