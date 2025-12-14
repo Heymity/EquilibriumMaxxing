@@ -14,11 +14,11 @@ module EQUILIBRIUM_MAXXING_FD (
 	
 	input   wire calib,
     
-   input  wire end_left,
-   input  wire end_right,
-   input  wire trava_servo,
-   input  wire reset_prep_cnt,
-   input  wire reset_nivel_locked,
+    input  wire end_left,
+    input  wire end_right,
+    input  wire trava_servo,
+    input  wire reset_prep_cnt,
+    input  wire reset_nivel_locked,
 	input  wire external,
 
 	output wire [1:0] nivel_dificuldade,
@@ -34,8 +34,6 @@ module EQUILIBRIUM_MAXXING_FD (
 	output wire perdeu_ponto,
 	output wire [7:0] pontuacao,
 	
-	output wire calib_done,
-	
 	output wire [9:0] M_eff_db,
 	output wire [9:0] mid_idx_db,
 	output wire [9:0] max_idx_db,
@@ -49,13 +47,9 @@ module EQUILIBRIUM_MAXXING_FD (
 	output wire [15:0] db_current_pos,
 	output wire start_game_db,
 
-	output wire [28:0] contador_jogo_db,
+	output wire [9:0] contador_jogo_db,
 	output wire nivel_dificuldade_locked_db,
-	output wire [23:0] cor_led_db,
-	
-	output wire			[31:0] db_speed,
-	output wire 		[31:0] db_acc,
-	output wire db_isInPostition
+	output wire [23:0] cor_led_db
 );
 
 	wire signed [15:0] alavanca1;
@@ -110,7 +104,7 @@ module EQUILIBRIUM_MAXXING_FD (
 
 	
 
-	reg [1:0] nivel_dificuldade_interno = 2'b00;
+	wire [1:0] nivel_dificuldade_interno;
 	
 	level_register LEVEL_SEL (
 		.clock(clock),
@@ -119,31 +113,31 @@ module EQUILIBRIUM_MAXXING_FD (
 		.alavanca2(alavanca2),
 		.start_game(start_game),
 		.start_game_db(start_game_db),
-		.nivel_reg(),
+		.nivel_reg(nivel_dificuldade_interno),
 		.nivel_locked_db(nivel_dificuldade_locked_db)
 	);
 	
 	wire signed [15:0] current_pos;
-	wire [28:0] mid_idx, max_idx;
+	wire [9:0] mid_idx, max_idx;
 	
 	assign db_current_pos = current_pos;
+	
+	wire signed [15:0] al1_drive;
+	wire signed [15:0] al2_drive;
+	wire calib_done;
+	assign calib_done = end_left || end_right;
 
 	pendulum_driver PEND (
 		.clock(clock),
 		.reset(reset),
-		.al1Bits(alavanca1),
-		.al2Bits(alavanca2),
+		.al1Bits(al1_drive),
+		.al2Bits(al2_drive),
 		.step(step),
 		.dir(dir),
 		.current_pos(current_pos),
 		.end_left(end_left),
 		.end_right(end_right),
-		.calib(calib),
-		.calib_done(calib_done),
-		
-		
-		.db_speed			(db_speed),
-		.db_acc				(db_acc)
+		.calib(calib)
 	);
 	
 	wire [3:0] led_alvo;
@@ -166,7 +160,7 @@ module EQUILIBRIUM_MAXXING_FD (
 		.cor_led_db(cor_led_db)
 	);
 	
-	wire [28:0] contador_jogo;
+	wire [9:0] contador_jogo;
 	
 	jogo_controller JOGO (
 		.clock(clock),
@@ -186,13 +180,15 @@ module EQUILIBRIUM_MAXXING_FD (
 		.perdeu_ponto(perdeu_ponto),
 		.pontuacao(pontuacao),
 	
-		.M_eff(),
+		.M_eff(M_eff_db),
 		.mid_idx(mid_idx),
 		.max_idx(max_idx),
-		.contador_jogo(contador_jogo),
-		
-		.db_isInPostition(db_isInPostition)
+		.contador_jogo(contador_jogo)
 	);
+	
+	assign nivel_dificuldade = nivel_dificuldade_interno;
+	assign mid_idx_db = mid_idx;
+	assign max_idx_db = max_idx;
 
 	wire prep_cnt_fim;
 	

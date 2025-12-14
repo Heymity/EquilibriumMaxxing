@@ -26,7 +26,8 @@ module decoder_11 (
         if (reset) begin
             for (i = 0; i < 11; i=i+1)
                 leds_int[i] <= 24'h000000;
-        end else begin
+        end
+        else if (carrega_frame) begin
             for (i = 0; i < 11; i=i+1)
                 leds_int[i] <= led_select[i] ? cor_led : 24'h000000;
         end

@@ -1,5 +1,5 @@
 module comparador_jogo #(
-    parameter TOTAL_RANGE_STEPS16 = 1600  // equivalente a 180°+10 em step/16
+    parameter TOTAL_RANGE_STEPS16 = 3200  // equivalente a 180° em step/16
 )(
     input  wire clock,
     input  wire [3:0] position_led,      // valor 0–10 vindo do random_led_controller
@@ -22,7 +22,7 @@ module comparador_jogo #(
     // Comparação
     always @(*) begin
         if (current_position >= limite_inferior &&
-            current_position <=  limite_superior)
+            current_position <  limite_superior)
             isInPosition = 1'b1;
         else
             isInPosition = 1'b0;

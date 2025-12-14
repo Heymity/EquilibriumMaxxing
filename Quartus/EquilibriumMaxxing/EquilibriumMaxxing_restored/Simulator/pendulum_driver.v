@@ -17,11 +17,7 @@ module pendulum_driver#(
 
 	output	wire	signed 	[15:0] 	current_pos,
 	
-	output wire calib_done,
-	
-	output									db_sim_clock_sync,
-	output wire			[31:0] db_speed,
-	output wire 		[31:0] db_acc
+	output									db_sim_clock_sync
 );
 
 	
@@ -100,12 +96,7 @@ module pendulum_driver#(
 		.calib				(calib			),
 
 		.end_left			(end_left		),
-		.end_right			(end_right		),
-		
-		.calib_done			(calib_done),
-		
-		.db_speed			(db_speed),
-		.db_acc				(db_acc)
+		.end_right			(end_right		)
 	);	
 	
 	assign gravity = 32'h0;
@@ -113,6 +104,6 @@ module pendulum_driver#(
 	gravity_rom ROM_GRAVIDADE (
 		.addr						(gravity_rom_addr	),
 		.data_out				(gravity				)
-	);
-	*/
+	);*/
+	
 endmodule

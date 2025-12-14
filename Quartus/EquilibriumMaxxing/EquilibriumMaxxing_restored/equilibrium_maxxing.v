@@ -1,0 +1,151 @@
+module equilibrium_maxxing (
+	input  wire clock,
+
+	input  wire start_game,
+	input  wire	RX,
+	input  wire end_left,
+	input  wire end_right,
+	
+	output wire serial,
+	output wire db_serial,
+	output wire step,
+	output wire dir,
+	output wire [7:0] pontuacao,
+
+
+	input	wire [9:0] SW,
+	
+	output [6:0] HEX0,
+	output [6:0] HEX1,
+	output [6:0] HEX2,
+	output [6:0] HEX3,
+	output [6:0] HEX4,
+	output [6:0] HEX5
+);
+	
+	assign reset = SW[9];
+
+	wire gerar_nova_jogada;
+	wire conta_nivel;
+	wire reset_nivel;
+	wire fade_trigger;
+	wire prep_done;
+	wire trava_servo;
+	wire calib;
+	wire reset_prep_cnt;
+	wire reset_nivel_locked;
+	wire external;
+	
+	wire ganhou_ponto;
+	wire perdeu_ponto;
+	
+	wire ponto_evento = ganhou_ponto | perdeu_ponto;
+	
+	wire [27:0] db_7seg_alavanca1;
+	wire [27:0] db_7seg_alavanca2;
+	wire [6:0] db_estado_serial2alavanca;
+    wire [6:0] db_estado_serialreceiver;
+	wire [6:0] db_estado_uc_geral_7seg;
+	wire [2:0] db_estado_uc_geral;
+	wire [15:0] db_current_pos;
+	wire [27:0] db_current_pos_7seg;
+	
+	equilibrium_maxxing_uc UC (
+		.clock(clock),
+		.reset(reset),
+	
+		.start_game(!start_game),
+		.ponto_evento(ponto_evento),
+		.prep_done(prep_done),
+		.sensorFimCurso(end_left | end_right),
+	
+		.gerar_nova_jogada(gerar_nova_jogada),
+		.conta_nivel(conta_nivel),
+		.reset_nivel(reset_nivel),
+		.fade_trigger(fade_trigger),
+		.trava_servo(trava_servo),
+		.calib(calib),
+		.reset_prep_cnt(reset_prep_cnt),
+		.reset_nivel_locked(reset_nivel_locked),
+		.external(external),
+		.db_estado(db_estado_uc_geral)
+	);
+	
+	EQUILIBRIUM_MAXXING_FD FD (
+		.clock(clock),
+		.reset(reset),
+	
+		.RX(RX),
+	
+		.start_game(!start_game),
+		.gerar_nova_jogada(gerar_nova_jogada),
+	
+		.conta_nivel(conta_nivel),
+		.reset_nivel(reset_nivel),
+	
+		.fade_trigger(fade_trigger),
+
+		.calib(calib),
+
+		.end_left(end_left),
+		.end_right(end_right),
+		.trava_servo(trava_servo),
+
+		.nivel_dificuldade(),
+		.prep_done(prep_done),
+		.reset_prep_cnt(reset_prep_cnt),
+		.reset_nivel_locked(reset_nivel_locked),
+		.external(external),
+	
+		.serial(serial),
+		.db_serial(db_serial),
+	
+		.step(step),
+		.dir(dir),
+	
+		.ganhou_ponto(ganhou_ponto),
+		.perdeu_ponto(perdeu_ponto),
+		.pontuacao(pontuacao),
+	
+		.db_al1(db_7seg_alavanca1),
+		.db_al2(db_7seg_alavanca2),
+		
+		.db_estado_serial2alavanca	(db_estado_serial2alavanca	),
+		.db_estado_serialreceiver	(db_estado_serialreceiver	),
+		
+		.db_current_pos(db_current_pos),
+		.nivel_dificuldade_locked_db(),
+		.start_game_db(),
+		.contador_jogo_db(),
+		.cor_led_db()
+	);
+	
+	assign {HEX5, HEX4, HEX3, HEX2, HEX1, HEX0} = 
+		SW[1:0] == 2'b00 ? 	{db_estado_serial2alavanca, db_estado_serialreceiver, db_7seg_alavanca1} :
+		SW[1:0] == 2'b01 ?	{db_estado_serial2alavanca, db_estado_serialreceiver, db_7seg_alavanca2} :
+		SW[1:0] == 2'b10 ?	{db_estado_serial2alavanca, db_estado_serialreceiver, db_current_pos_7seg} : 
+		SW[1:0] == 2'b11 ?	{db_estado_uc_geral_7seg, {35{1'b1}}} : 42'd0;
+
+	hexa7seg CURRENT_POS_HEX0 (
+		.hexa		(db_current_pos[3:0]),
+	   .display	(db_current_pos_7seg[6:0])
+	);
+	hexa7seg CURRENT_POS_HEX1 (
+		.hexa		(db_current_pos[7:4]),
+	   .display	(db_current_pos_7seg[13:7])
+	);
+	hexa7seg CURRENT_POS_HEX2 (
+		.hexa		(db_current_pos[11:8]),
+	   .display	(db_current_pos_7seg[20:14])
+	);
+	hexa7seg CURRENT_POS_HEX3 (
+		.hexa		(db_current_pos[15:12]),
+	   .display	(db_current_pos_7seg[27:21])
+	);
+
+	hexa7seg UC_GERAL (
+		.hexa		(db_estado_uc_geral),
+	   .display	(db_estado_uc_geral_7seg)
+	);
+		
+endmodule

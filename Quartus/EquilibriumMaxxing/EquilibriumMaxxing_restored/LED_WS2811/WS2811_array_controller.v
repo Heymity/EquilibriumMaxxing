@@ -19,13 +19,13 @@ module WS2811_array_controller (
 	input [23:0] external_led10,
 
 	output 		serial,
-	output		word_sent,
 	
 	output		db_serial
 );
 
 	wire last_led;			
-	wire serial_reset_done;			    
+	wire serial_reset_done;
+	wire word_sent;				    
 	wire send_data;			
 	wire next_led;			
 	wire serial_reset;		

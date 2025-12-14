@@ -19,9 +19,6 @@ module serial2alavanca(
 	localparam al2LSB 	= 3'b110;
 	localparam al2MSB 	= 3'b111;
 	
-	reg zera_timeout;
-	wire timeout;
-	reg reset_timeout;
 	wire receiver_data_ready;
 	wire [7:0] dados_ascii;
 	
@@ -30,10 +27,9 @@ module serial2alavanca(
 	reg signed	[15:0]	al1Bits_internal;
 	reg signed	[15:0]	al2Bits_internal;	
 	
-	
 	rx_serial_8N1 SERIAL (
 		 .clock      (clock),
-		 .reset      (reset | reset_timeout),
+		 .reset      (reset),
 		 .RX         (RX),
 		 
 		 .pronto     (receiver_data_ready),
@@ -47,15 +43,9 @@ module serial2alavanca(
 			Eatual <= preambleA1;
 			al1Bits_internal <= 0;
 			al2Bits_internal <= 0;
-			zera_timeout <= 1'b0;
-			reset_timeout <= 1'b0;
 		end else begin
-			if (timeout) begin
-				zera_timeout <= 1'b1;
-				Eatual <= preambleD;
-				reset_timeout <= 1'b1;
-			end else if (receiver_data_ready) begin
-				zera_timeout <= 1'b1;
+				
+			if (receiver_data_ready) begin
 				case (Eatual) 
 					preambleD: 	begin
 						Eatual <= dados_ascii == 8'h44 ? preambleA1 		:preambleD;
@@ -82,26 +72,14 @@ module serial2alavanca(
 						al2Bits_internal[15:8] <= dados_ascii;
 					end
 				endcase
-			end else begin
-				zera_timeout <= 1'b0;
-				reset_timeout <= 1'b0;
 			end
 		end
 	end
 	
 	hexa7seg HEX (
-		.hexa		({1'b0, Eatual}),
+		.hexa		(Eatual),
 		.display (db_estado)
 	);
  
-	contador_m #(.M(5000000), .N(32)) TIMEOUT (
-		.clock(clock),
-		.zera_as(reset),
-		.zera_s(zera_timeout),
-		.conta(1'b1),
-		.Q(),
-		.fim(timeout),
-		.meio()
-	);
 
 endmodule

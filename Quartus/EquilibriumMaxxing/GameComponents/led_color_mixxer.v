@@ -41,32 +41,32 @@ module led_color_mixxer #(
 
         if (cntv == midv) begin
             // Amarelo puro
-            R = 8'd255;
-            G = 8'd255;
+            R = 8'd190;
+            G = 8'd190;
             B = 8'd0;
         end else if (cntv < midv) begin
             // vermelho -> amarelo: G cresce de 0..255 conforme cnt/mid
-            R = 8'd255;
+            R = 8'd190;
             if (midv > 0) begin
                 // G = (cnt * 255) / mid
-                prod = cntv * 64'd255;
+                prod = cntv * 64'd320;
                 val64 = prod / midv;
-                if (val64 > 255) val64 = 255;
+                if (val64 > 190) val64 = 190;
                 G = val64[7:0];
             end else begin
-                G = 8'd255;
+                G = 8'd190;
             end
             B = 8'd0;
         end else begin
             // amarelo -> verde: R decresce de 255..0 conforme (cnt-mid)/(max-mid)
-            G = 8'd255;
+            G = 8'd190;
             distancia = (maxv > midv) ? (maxv - midv) : 64'd1;
             delta = cntv - midv;
             if (distancia > 0) begin
-                prod2 = delta * 64'd255;
+                prod2 = delta * 64'd320;
                 val64 = prod2 / distancia;
-                if (val64 > 255) val64 = 255;
-                R = 8'd255 - val64[7:0];
+                if (val64 > 190) val64 = 190;
+                R = 8'd190 - val64[7:0];
             end else begin
                 R = 8'd0;
             end

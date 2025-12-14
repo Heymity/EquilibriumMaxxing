@@ -3,7 +3,7 @@ module led_color_fader (
     input  wire        reset,
     input  wire        trigger,           // pulso: início da jogada
     input  wire [23:0] cor_in,
-    input  wire [28:0] max_idx,
+    input  wire [9:0] max_idx,
     output reg  [23:0] cor_out
 );
 
@@ -44,15 +44,10 @@ module led_color_fader (
                 if (fading) begin
                     if (fade_counter > 0) begin
                         // cálculo linear: out = in * fade_counter / fade_length
-                        //R_out <= (R_in * fade_counter) / fade_length;
-                        //G_out <= (G_in * fade_counter) / fade_length;
-                        //B_out <= (B_in * fade_counter) / fade_length;
-                        
-								R_out <= 8'd128;
-								G_out <= 8'd128;
-								B_out <= 8'd128;
-								
-								cor_out <= {R_out, G_out, B_out};
+                        R_out <= (R_in * fade_counter) / fade_length;
+                        G_out <= (G_in * fade_counter) / fade_length;
+                        B_out <= (B_in * fade_counter) / fade_length;
+                        cor_out <= {R_out, G_out, B_out};
                         fade_counter <= fade_counter - 1;
                     end else begin
                         // fade concluído
