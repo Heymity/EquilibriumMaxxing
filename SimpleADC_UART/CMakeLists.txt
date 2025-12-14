@@ -23,4 +23,5 @@ target_link_libraries(SimpleADC_UART pico_stdlib
 		pico_stdlib
 		hardware_adc
 		hardware_irq
-		hardware_dma)
+		hardware_dma
+		hardware_pwm)

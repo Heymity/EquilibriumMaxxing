@@ -7,6 +7,7 @@
 #include "hardware/dma.h"
 #include "hardware/irq.h"
 #include "hardware/uart.h"
+#include "hardware/pwm.h"
 
 #define UART_ID uart1
 #define BAUD_RATE 115200
@@ -32,7 +33,7 @@
 // 5000		- 10ms
 // 1000		- 2ms
 #define NUM_BUFFERS 2
-#define NUM_SAMPLES_PER_BUFFER 1000
+#define NUM_SAMPLES_PER_BUFFER 1500
 #define NUM_BYTES_PER_BUFFER (NUM_SAMPLES_PER_BUFFER*sizeof(uint16_t))
 
 static int dma_chan = -1;
@@ -40,8 +41,29 @@ static uint16_t adcBuffers[NUM_BUFFERS][NUM_SAMPLES_PER_BUFFER] = {{},{}};
 static uint8_t dmaBufferIdx = 0;
 static uint8_t lastDmaBufferIdx= -1;
 
+typedef struct PWM_gpio {
+	uint gpio;
+	uint channel;
+	uint slice;
+	uint period;
+	uint duty;
+} PWM_gpio;
+
+PWM_gpio r_left;
+PWM_gpio g_left;
+PWM_gpio b_left;
+
+PWM_gpio r_right;
+PWM_gpio g_right;
+PWM_gpio b_right;
+
+PWM_gpio* pwms[6];
+
+int leverMax[2] = {0, 0};
+int leverMin[2] = {4096, 4096};
 
 void dma_handler();
+void update_pwm();
 
 int main() {
 	stdio_init_all();
@@ -53,7 +75,35 @@ int main() {
     gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
     uart_set_hw_flow(UART_ID, false, false);
     uart_set_format(UART_ID, DATA_BITS, STOP_BITS, PARITY);
-    uart_set_fifo_enabled(UART_ID, true);
+	uart_set_fifo_enabled(UART_ID, true);
+
+	b_left.gpio = 10;
+	g_left.gpio = 11;
+	r_left.gpio = 12;
+
+	b_right.gpio = 23;
+	g_right.gpio = 24;
+	r_right.gpio = 25;
+
+	pwms[0] = &r_left;
+	pwms[1] = &g_left;
+	pwms[2] = &b_left;
+	pwms[3] = &r_right;
+	pwms[4] = &g_right;
+	pwms[5] = &b_right;
+
+	for (int i = 0; i < 6; i++) {
+		adc_gpio_init(pwms[i]->gpio);
+		gpio_set_function(pwms[i]->gpio, GPIO_FUNC_PWM);
+		pwms[i]->period = 256;
+		pwms[i]->duty = 20;
+		pwms[i]->slice = pwm_gpio_to_slice_num(pwms[i]->gpio);
+		pwms[i]->channel = pwm_gpio_to_channel(pwms[i]->gpio);
+		pwm_set_wrap(pwms[i]->slice, 255);
+
+		pwm_set_chan_level(pwms[i]->slice, pwms[i]->channel, pwms[i]->duty);
+		pwm_set_enabled(pwms[i]->slice, true);
+	}
 
 	adc_init();
 
@@ -114,9 +164,9 @@ int main() {
 
 	adc_run(true);
 
-	gpio_init(PICO_DEFAULT_LED_PIN);
-	gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
-	gpio_put(PICO_DEFAULT_LED_PIN, true);
+	//gpio_init(PICO_DEFAULT_LED_PIN);
+	//gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+	//gpio_put(PICO_DEFAULT_LED_PIN, true);
 
 
 #pragma clang diagnostic push
@@ -152,6 +202,11 @@ void __not_in_flash_func(dma_handler()) {
     for (int i = 0; i < ADC_CHANNELS; i++) {
         sum[i] = (sum[i] * ADC_CHANNELS) / NUM_SAMPLES_PER_BUFFER;
        //sum[i] -= (0x0FFF / 2);
+		if (sum[i] < 1000) sum[i] = 1000;
+		if (sum[i] > 3200) sum[i] = 3200;
+
+    	if (sum[i] > leverMax[i]) leverMax[i] = sum[i];
+    	if (sum[i] < leverMin[i]) leverMin[i] = sum[i];
     }
 	//long sum = 0;
 	//for (int i = 0; i < NUM_SAMPLES_PER_BUFFER; i++) {
@@ -161,6 +216,7 @@ void __not_in_flash_func(dma_handler()) {
 	//}
 	//printf("ADC FIFO has %d elements  | \n", adc_fifo_get_level());
 	//
+
     printf("Avg: %ld\n", sum[0]);
     printf("Avg: %ld\n", sum[1]);
     printf("Last: %d\n", adcBuffers[lastDmaBufferIdx][0]);
@@ -168,10 +224,11 @@ void __not_in_flash_func(dma_handler()) {
 
 	int16_t remapped[] = {0, 0};
 	for (int i = 0; i < ADC_CHANNELS; i++) {
-		remapped[i] = ((uint16_t)(sum[i] < 0 ? -sum[i] : sum[i])) - 0xFFF/2;
+		remapped[i] = ((float)((uint16_t)sum[i] - leverMax[i]) / ((float)(leverMax[i] - leverMin[i])) * 600) + 300;
+		//remapped[i] = (((uint16_t)(sum[i] < 0 ? -sum[i] : sum[i])) - 0xFFF/2) / 4;
 	}
 
-	remapped[1] = 0;
+	//remapped[1] = 0;
 	printf("Remapped: %d\n", remapped[0]);
 	printf("Remapped: %d\n", remapped[1]);
 
@@ -181,9 +238,9 @@ void __not_in_flash_func(dma_handler()) {
 		// Preamble - 4 bytes
 		'D', 'A', 'T', 'A',
         (uint8_t)   remapped[0] & 0xff,
-        (uint8_t) ((remapped[0] >> 8) & 0xff) | 0xF000,
+        (uint8_t) ((remapped[0] >> 8) & 0xff),
         (uint8_t)   remapped[1] & 0xff,
-        (uint8_t) ((remapped[1] >> 8) & 0xff) | 0xF000,
+        (uint8_t) ((remapped[1] >> 8) & 0xff),
 		/* Timestamp - 8 bytes (12 bytes total) - Little Endian
 		(uint8_t) lastInvokedTime & 0xff,
 		(uint8_t) ((lastInvokedTime >> 8) & 0xff),
@@ -208,6 +265,56 @@ void __not_in_flash_func(dma_handler()) {
 	};
     uart_write_blocking(UART_ID, header, sizeof(header));
 
+	// 252, 126, 0  t= 1
+	// 0, 195, 255  t= 0
+
+	uint8_t r_interpolated;
+	uint8_t g_interpolated;
+	uint8_t b_interpolated;
+
+	if (remapped[0] > 0) {
+		//const float t = ((float)(sum[0] - 2048) / 2048.0f);
+		const float t = ((float)(remapped[0]) / 500.0f);
+
+		r_interpolated = (uint8_t) (252.0 * t);
+		g_interpolated = (uint8_t) (126.0 * t);
+		b_interpolated = (uint8_t) (0 * t);
+	} else {
+		//const float t = 1.0f - ((float)(sum[0]) / 2048.0f);
+		const float t = ((float)(-remapped[0]) / 500.0f);
+
+		r_interpolated = (uint8_t) (0.0* t);
+		g_interpolated = (uint8_t) (195.0 * t);
+		b_interpolated = (uint8_t) (255.0 * t);
+	}
+	r_left.duty = r_interpolated;
+	g_left.duty = g_interpolated;
+	b_left.duty = b_interpolated;
+
+
+	//if (sum[1] > 2048) {
+	if (remapped[1] > 0) {
+		//const float t = ((float)(sum[1] - 2048) / 2048.0f);
+		const float t = ((float)(remapped[1]) / 500.0f);
+
+		r_interpolated = (uint8_t) (252.0 * t);
+		g_interpolated = (uint8_t) (126.0 * t);
+		b_interpolated = (uint8_t) (0 * t);
+	} else {
+		//const float t = 1.0f - ((float)(sum[1]) / 2048.0f);
+		const float t = ((float)(-remapped[1]) / 500.0f);
+
+		r_interpolated = (uint8_t) (0.0* t);
+		g_interpolated = (uint8_t) (195.0 * t);
+		b_interpolated = (uint8_t) (255.0 * t);
+	}
+
+	r_right.duty = r_interpolated;
+	g_right.duty = g_interpolated;
+	b_right.duty = b_interpolated;
+
+	update_pwm();
+
 	//tud_cdc_n_write(1, header, sizeof(header));
 	//tud_cdc_n_write_flush(1);
 	//tud_cdc_n_write(1, "START MESSAGE ----------", 24);
@@ -219,3 +326,12 @@ void __not_in_flash_func(dma_handler()) {
 
 }
 
+void update_pwm() {
+	//printf("%d, %d, %d - %d, %d, %d\n", r_left.duty,g_left.duty,b_left.duty, r_right.duty, g_right.duty, b_right.duty);
+
+	for (int i = 0; i < 6; i++) {
+		//printf("%d\n", pwms[i]->duty);
+		pwm_set_chan_level(pwms[i]->slice, pwms[i]->channel, pwms[i]->duty);
+		pwm_set_enabled(pwms[i]->slice, true);
+	}
+}
