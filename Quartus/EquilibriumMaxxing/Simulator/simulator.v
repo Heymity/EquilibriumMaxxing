@@ -3,16 +3,20 @@ module simulator #(
 	parameter fixedPointBaseBits = 16,
 	parameter precision = 16
 ) (
-	input 																	clock,
-	input																		reset,
+	input 											clock,
+	input												reset,
 	input signed 		[fixedPointBaseBits+precision-1:0]	 	alavanca1,
 	input signed 		[fixedPointBaseBits+precision-1:0] 		alavanca2,
 	input signed 		[fixedPointBaseBits+precision-1:0]		gravity,
-	
-	output reg signed [fixedPointBaseBits-1:0]					delta_steps, 			// step/16
-	output reg signed [fixedPointBaseBits-1:0]					current_pos,			// step/16
 
-	output wire																sync_sim_clock
+	input wire											calib,
+	input wire											end_left,
+	input wire											end_right,
+	
+	output reg signed [fixedPointBaseBits-1:0]				delta_steps, 			// step/16
+	output reg signed [fixedPointBaseBits-1:0]				current_pos,			// step/16
+
+	output wire											sync_sim_clock
 );
 
 	localparam	MAX_SPEED = 64'h0002_18DE_F400_0000;
@@ -51,6 +55,20 @@ module simulator #(
 			integrated_pos		<= {(precision + fixedPointBaseBits + 47){1'b0}};
 			current_pos		 	<= {fixedPointBaseBits{1'b0}};
 			delta_steps		 	<= {fixedPointBaseBits{1'b0}};
+		end else if (calib) begin
+			delta_steps 		<= 1;
+
+			if (end_right) begin
+				integrated_speed = 0;
+				integrated_pos = 79'd0;
+			end
+
+			if (end_left) begin
+				integrated_speed = 0;
+				integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] = 16'd1600;
+				integrated_pos[47+precision-1:0] = 63'd0;
+			end
+
 		end else begin
 			total_acc			=	(alavanca1 + alavanca2 + gravity);
 			
@@ -64,8 +82,18 @@ module simulator #(
 					integrated_speed = MAX_SPEED;
 				end
 			end	
+
+			if (integrated_pos < 79'sd0) begin
+				integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] = 16'sd0;
+				integrated_pos[47+precision-1:0] = 63'd0;
+				integrated_speed = 0;
+			end else if (integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] > 16'sd1599) begin
+				integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] = 16'sd1599;
+				integrated_pos[47+precision-1:0] = 63'd0;
+				integrated_speed = 0;
+			end
 			
-			
+
 			integrated_pos 	= integrated_pos + (integrated_speed * simPeriod);
 			
 			delta_steps 		= integrated_pos[fixedPointBaseBits+47+precision-1:47+precision] - current_pos; 

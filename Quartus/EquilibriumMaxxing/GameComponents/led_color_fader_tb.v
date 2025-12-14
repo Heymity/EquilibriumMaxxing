@@ -4,7 +4,7 @@ module led_color_fader_tb;
     reg reset;
     reg trigger;
     reg [23:0] cor_in;
-    reg [31:0] max_idx;
+    reg [9:0] max_idx;
     wire [23:0] cor_out;
 
     // instantiate DUT

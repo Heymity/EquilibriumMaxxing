@@ -6,7 +6,11 @@ module pendulum_driver#(
 	input		reset,
 	
 	input 	signed	[leverADCBits-1:0]	al1Bits, // Ponto Fixo 14.2
-	input		signed	[leverADCBits-1:0]	al2Bits, // Ponto Fixo 14.2
+	input	signed	[leverADCBits-1:0]	al2Bits, // Ponto Fixo 14.2
+	input   wire calib,
+
+	input  	wire end_left,
+	input  	wire end_right,
 	
 	output									step,
 	output									dir,
@@ -80,16 +84,20 @@ module pendulum_driver#(
 	) SIMULATION_UNIT (
 		.clock					(clock			),
 		.reset					(reset			),
-					
+				
 		.alavanca1				(al1SPC			),			//[fixedPointBaseBits+precision-1:0]
 		.alavanca2				(al2SPC			),			//[fixedPointBaseBits+precision-1:0]
 		.gravity					(gravity			),			//[fixedPointBaseBits+precision-1:0]
-					
+				
 		.delta_steps			(delta_steps	), 		// step/16 [fixedPointBaseBits-1:0]
 		.current_pos			(current_pos	),			// step/16 [fixedPointBaseBits-1:0]
 	
-		.sync_sim_clock		(sim_clock_sync)
-	);
+		.sync_sim_clock		(sim_clock_sync),
+		.calib				(calib			),
+
+		.end_left			(end_left		),
+		.end_right			(end_right		)
+	);	
 	
 	gravity_rom ROM_GRAVIDADE (
 		.addr						(gravity_rom_addr	),

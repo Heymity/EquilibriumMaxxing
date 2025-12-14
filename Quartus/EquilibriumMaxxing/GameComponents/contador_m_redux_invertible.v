@@ -15,10 +15,10 @@ module contador_m_redux_invertible #(
 	output reg                  fim,
 	output reg                  inicio,
 
-	//saídas para mixxer de cor
-    output wire [31:0]          M_eff_out,
-    output wire [31:0]          mid_idx_out,
-    output wire [31:0]          max_idx_out
+	//saídas para mixxer de cor (reduzidas para N bits)
+	output wire [N-1:0]         M_eff_out,
+	output wire [N-1:0]         mid_idx_out,
+	output wire [N-1:0]         max_idx_out
 );
 
 localparam integer SCORE_MAX = (1<<SCORE_N) - 1;
@@ -27,9 +27,10 @@ wire [31:0] M_eff = M - reduction;
 wire [31:0] M_eff_minus1 = (M_eff > 0) ? (M_eff - 1) : 0;
 wire [31:0] mid_idx = (M_eff > 0) ? (M_eff/2) : 0;
 
-assign M_eff_out   = M_eff;
-assign mid_idx_out = mid_idx;
-assign max_idx_out = M_eff_minus1;
+// export only the lower N bits (M <= 2^N - 1 should hold)
+assign M_eff_out   = M_eff[N-1:0];
+assign mid_idx_out = mid_idx[N-1:0];
+assign max_idx_out = M_eff_minus1[N-1:0];
 
 always @(posedge clock or posedge zera_as) begin
 	if (zera_as) begin

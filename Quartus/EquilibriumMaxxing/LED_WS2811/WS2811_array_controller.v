@@ -11,8 +11,15 @@ module WS2811_array_controller (
     input [23:0] external_led2,
     input [23:0] external_led3,
     input [23:0] external_led4,
+	input [23:0] external_led5,
+	input [23:0] external_led6,
+	input [23:0] external_led7,
+	input [23:0] external_led8,
+	input [23:0] external_led9,
+	input [23:0] external_led10,
 
 	output 		serial,
+	output		word_sent,
 	
 	output		db_serial
 );
@@ -55,6 +62,12 @@ module WS2811_array_controller (
         .external_led2(external_led2),
         .external_led3(external_led3),
         .external_led4(external_led4),
+		  .external_led5(external_led5),
+        .external_led6(external_led6),
+        .external_led7(external_led7),
+        .external_led8(external_led8),
+        .external_led9(external_led9),
+        .external_led10(external_led10),
 	
 		// Control Inputs
 		.send_data				(send_data			),

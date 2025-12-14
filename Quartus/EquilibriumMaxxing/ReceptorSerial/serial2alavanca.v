@@ -77,7 +77,7 @@ module serial2alavanca(
 	end
 	
 	hexa7seg HEX (
-		.hexa		(Eatual),
+		.hexa		({1'b0, Eatual}),
 		.display (db_estado)
 	);
  

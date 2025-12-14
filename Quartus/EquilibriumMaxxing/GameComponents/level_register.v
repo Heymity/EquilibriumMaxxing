@@ -7,9 +7,12 @@ module level_register (
 
     input wire start_game,
 
-    output reg  [1:0] nivel_reg
+    output wire start_game_db,
+    output reg  [1:0] nivel_reg,
+    output wire nivel_locked_db
 );
 
+    assign start_game_db = start_game;
     reg nivel_locked;
 
     always @(posedge clock or posedge reset) begin
@@ -30,5 +33,7 @@ module level_register (
             end
         end
     end
+
+    assign nivel_locked_db = nivel_locked;
 
 endmodule
