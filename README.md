@@ -1,3 +1,12 @@
+# Equilibrim Maxxing
+
+O Projeto Equilibrium Maxxing foi desenvolvido como parte da disciplina PCS3645 - Laboratório Digital 2, com a motivação extensionista de desenvolver Sistemas Digitais que auxiliam pessoas da Transtorno do Espectro Autista. 
+
+O Nosso projeto visa desenvolver coordenação visão-motora e coordenação motora fina, consistindo de equilibrar um pêndulo invertido em posições especificas. Veja mais detalhes na curta apresentação abaixo no Youtube
+
+https://youtu.be/-tbgzlC2d6Y
+
+
 # Para clonar o projeto
 Execute os seguintes comandos:
 
@@ -42,3 +51,5 @@ Agora toda vez que desejar compilar o código simplesmente execute:
 make
 ```
 e conecte a placa no computador via USB segurando o botão BOOTSEL. Arraste o arquivo .uf2 da pasta build para a pasta aberta pelo microcontrolador.
+
+Os arquivos da montagem fisica ainda não está disponível nesse repositório, mas se for de interesse, por favor crie um issue.
